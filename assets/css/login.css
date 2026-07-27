@@ -1,0 +1,127 @@
+/* =============================================
+   Login Page Styles
+   ============================================= */
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 32px 32px;
+  border-top: 3px solid var(--green-primary);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: rgba(0, 200, 83, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.login-icon .material-icons {
+  font-size: 36px;
+  color: var(--green-light);
+}
+
+.login-header h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.login-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.login-form {
+  width: 100%;
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.mui-checkbox {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--black-border);
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.mui-checkbox:checked + .checkbox-custom {
+  background-color: var(--green-primary);
+  border-color: var(--green-primary);
+}
+
+.mui-checkbox:checked + .checkbox-custom::after {
+  content: "check";
+  font-family: "Material Icons";
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.checkbox-label:hover .checkbox-custom {
+  border-color: var(--green-light);
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.forgot-link {
+  font-size: 0.8rem;
+  color: var(--green-light);
+  transition: color var(--transition-fast);
+}
+
+.forgot-link:hover {
+  color: var(--green-lighter);
+  text-decoration: underline;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 0.9rem;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--black-border);
+}
+
+.login-footer p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
