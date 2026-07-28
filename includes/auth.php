@@ -44,7 +44,24 @@ function isAuthenticated(): bool
 
 function getAuthenticatedUser(): ?array
 {
-    return isAuthenticated() ? $_SESSION['user'] : null;
+    if (!isAuthenticated()) {
+        return null;
+    }
+
+    $username = strtolower((string) ($_SESSION['user']['username'] ?? ''));
+    $email = strtolower((string) ($_SESSION['user']['email'] ?? ''));
+    $role = strtolower((string) ($_SESSION['user']['role'] ?? ''));
+
+    if (
+        $username === 'admin'
+        || $email === 'admin'
+        || in_array($role, ['admin', 'administrator', 'super admin'], true)
+    ) {
+        $_SESSION['user']['is_admin'] = true;
+        $_SESSION['user']['role'] = 'Administrator';
+    }
+
+    return $_SESSION['user'];
 }
 
 function refreshSessionActivity(): void
@@ -116,12 +133,75 @@ function enforceInactivityTimeout(): void
     refreshSessionActivity();
 }
 
+function authTableExists(PDO $pdo, string $tableName): bool
+{
+    try {
+        $statement = $pdo->prepare(
+            'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name'
+        );
+        $statement->execute(['table_name' => $tableName]);
+
+        return (int) $statement->fetchColumn() > 0;
+    } catch (Throwable $exception) {
+        error_log('Auth table check failed: ' . $exception->getMessage());
+
+        return false;
+    }
+}
+
+function authColumnExists(PDO $pdo, string $tableName, string $columnName): bool
+{
+    try {
+        $statement = $pdo->prepare(
+            'SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name'
+        );
+        $statement->execute([
+            'table_name' => $tableName,
+            'column_name' => $columnName,
+        ]);
+
+        return (int) $statement->fetchColumn() > 0;
+    } catch (Throwable $exception) {
+        error_log('Auth column check failed: ' . $exception->getMessage());
+
+        return false;
+    }
+}
+
+function authRoleNameColumn(PDO $pdo): ?string
+{
+    if (!authTableExists($pdo, 'roles')) {
+        return null;
+    }
+
+    if (authColumnExists($pdo, 'roles', 'name')) {
+        return 'name';
+    }
+
+    if (authColumnExists($pdo, 'roles', 'role')) {
+        return 'role';
+    }
+
+    return null;
+}
+
 function findUserByIdentifier(string $identifier): ?array
 {
     $pdo = getDatabaseConnection();
+    $select = ['u.*'];
+    $join = '';
+
+    if (authColumnExists($pdo, 'users', 'role_id')) {
+        $roleNameColumn = authRoleNameColumn($pdo);
+
+        if ($roleNameColumn !== null) {
+            $select[] = 'r.`' . str_replace('`', '``', $roleNameColumn) . '` AS role_name';
+            $join = ' LEFT JOIN roles r ON r.id = u.role_id';
+        }
+    }
 
     $statement = $pdo->prepare(
-        'SELECT * FROM users WHERE email = :email_identifier OR username = :username_identifier LIMIT 1'
+        'SELECT ' . implode(', ', $select) . ' FROM users u' . $join . ' WHERE u.email = :email_identifier OR u.username = :username_identifier LIMIT 1'
     );
     $statement->execute([
         'email_identifier' => $identifier,
@@ -170,15 +250,21 @@ function passwordMatches(string $password, string $storedPassword): bool
 
 function buildSessionUser(array $user): array
 {
-    $role = $user['role_name'] ?? $user['role'] ?? $user['user_role'] ?? $user['type'] ?? '';
+    $username = (string) ($user['username'] ?? '');
+    $email = (string) ($user['email'] ?? '');
+    $role = (string) ($user['role_name'] ?? $user['role'] ?? $user['user_role'] ?? $user['type'] ?? '');
+    $isAdmin = !empty($user['is_admin'])
+        || strtolower($username) === 'admin'
+        || strtolower($email) === 'admin'
+        || in_array(strtolower($role), ['admin', 'administrator', 'super admin'], true);
 
     return [
         'id' => $user['id'],
-        'username' => $user['username'] ?? '',
-        'email' => $user['email'] ?? '',
-        'name' => $user['full_name'] ?? $user['name'] ?? $user['username'] ?? $user['email'] ?? 'User',
-        'role' => $role !== '' ? $role : 'User',
-        'is_admin' => !empty($user['is_admin']) || in_array(strtolower((string) $role), ['admin', 'administrator', 'super admin'], true),
+        'username' => $username,
+        'email' => $email,
+        'name' => $user['full_name'] ?? $user['name'] ?? $username ?? $email ?? 'User',
+        'role' => $isAdmin ? 'Administrator' : ($role !== '' ? $role : 'User'),
+        'is_admin' => $isAdmin,
     ];
 }
 
@@ -194,6 +280,20 @@ function attemptLogin(string $identifier, string $password, bool $rememberMe = f
 
     $_SESSION['user'] = buildSessionUser($user);
     refreshSessionActivity();
+
+    try {
+        $pdo = getDatabaseConnection();
+
+        if (authColumnExists($pdo, 'users', 'last_login')) {
+            $statement = $pdo->prepare('UPDATE users SET last_login = :last_login WHERE id = :id');
+            $statement->execute([
+                'last_login' => date('Y-m-d H:i:s'),
+                'id' => (int) $user['id'],
+            ]);
+        }
+    } catch (Throwable $exception) {
+        error_log('Last login update failed: ' . $exception->getMessage());
+    }
 
     if ($rememberMe) {
         $rememberLifetime = authRememberMeSeconds();

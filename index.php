@@ -62,7 +62,9 @@ if (in_array($page, $protected_pages, true)) {
     requireAuthentication();
 }
 
+handleProfileManagementRequest();
 handleUserManagementRequest();
+handleRoleManagementRequest();
 
 // Include header
 require_once 'includes/header.php';
