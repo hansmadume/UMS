@@ -80,10 +80,122 @@
   margin-top: 2px;
 }
 
+/* Dashboard Hero */
+.dashboard-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.dashboard-eyebrow {
+  color: var(--green-light);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.dashboard-hero h1 {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dashboard-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.dashboard-subtitle strong {
+  color: var(--text-primary);
+}
+
+.dashboard-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  padding: 14px 16px;
+  border: 1px solid var(--black-border);
+  border-radius: var(--radius-md);
+  background: var(--black-secondary);
+}
+
+.dashboard-user-badge .material-icons {
+  color: var(--green-light);
+  font-size: 32px;
+}
+
+.dashboard-user-badge strong,
+.quick-link-card strong {
+  color: var(--text-primary);
+}
+
+.badge-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+}
+
+/* Quick Links */
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 20px;
+}
+
+.quick-link-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--black-border);
+  border-radius: var(--radius-md);
+  background: var(--black-secondary);
+  text-decoration: none;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.quick-link-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--green-light);
+  background: var(--black-tertiary);
+}
+
+.quick-link-card .material-icons {
+  color: var(--green-light);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.quick-link-card p {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
-  .dashboard-grid {
+  .dashboard-grid,
+  .quick-links-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-user-badge {
+    width: 100%;
   }
 }
 

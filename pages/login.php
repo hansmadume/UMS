@@ -6,18 +6,48 @@
         <h1>User Management System</h1>
         <p class="login-subtitle">Sign in to your account</p>
     </div>
-    <form action="#" method="POST" class="login-form">
+
+    <?php if (!empty($login_notice)): ?>
+        <div class="login-alert login-alert-info" role="alert">
+            <?php echo htmlspecialchars($login_notice, ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($login_error)): ?>
+        <div class="login-alert login-alert-error" role="alert">
+            <?php echo htmlspecialchars($login_error, ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+    <?php endif; ?>
+
+    <form action="index.php?page=login" method="POST" class="login-form" novalidate>
         <div class="mui-input-group">
-            <input type="text" class="mui-input" id="username" placeholder="Username" required>
-            <label class="mui-label" for="username">Username</label>
+            <input
+                type="text"
+                class="mui-input"
+                id="identifier"
+                name="identifier"
+                placeholder="Email Address or Username"
+                value="<?php echo htmlspecialchars($_POST['identifier'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                autocomplete="username"
+                required
+            >
+            <label class="mui-label" for="identifier">Email Address or Username</label>
         </div>
         <div class="mui-input-group">
-            <input type="password" class="mui-input" id="password" placeholder="Password" required>
+            <input
+                type="password"
+                class="mui-input"
+                id="password"
+                name="password"
+                placeholder="Password"
+                autocomplete="current-password"
+                required
+            >
             <label class="mui-label" for="password">Password</label>
         </div>
         <div class="login-options">
             <label class="checkbox-label">
-                <input type="checkbox" class="mui-checkbox" checked>
+                <input type="checkbox" class="mui-checkbox" name="remember_me" value="1" <?php echo isset($_POST['remember_me']) ? 'checked' : ''; ?>>
                 <span class="checkbox-custom"></span>
                 <span class="checkbox-text">Remember me</span>
             </label>

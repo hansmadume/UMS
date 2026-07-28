@@ -51,7 +51,7 @@
                 <span class="nav-text">Profile</span>
             </a>
             <div class="nav-spacer"></div>
-            <a href="index.php?page=login" class="nav-item logout">
+            <a href="index.php?page=logout" class="nav-item logout">
                 <span class="material-icons">logout</span>
                 <span class="nav-text">Logout</span>
             </a>
@@ -66,6 +66,12 @@
                 <h3 class="topbar-title"><?php echo ucfirst(str_replace('_', ' ', $page)); ?></h3>
             </div>
             <div class="topbar-right">
+                <?php $current_user = function_exists('getAuthenticatedUser') ? getAuthenticatedUser() : null; ?>
+                <?php if ($current_user): ?>
+                    <span class="topbar-user">
+                        <?php echo htmlspecialchars($current_user['name'] ?: $current_user['username'] ?: $current_user['email'], ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                <?php endif; ?>
                 <span class="material-icons topbar-icon">notifications</span>
                 <span class="material-icons topbar-icon">account_circle</span>
             </div>
