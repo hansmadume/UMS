@@ -1,12 +1,7 @@
-/* =============================================
-   Profile Page Styles
-   ============================================= */
-
 .profile-page {
   max-width: 800px;
 }
 
-/* Profile Header Card */
 .profile-header-card {
   display: flex;
   align-items: center;
@@ -55,7 +50,6 @@
   color: var(--green-light);
 }
 
-/* Profile Form Card */
 .profile-form-card {
   padding: 32px;
 }
@@ -87,7 +81,6 @@
   border-top: 1px solid var(--black-border);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .profile-header-card {
     flex-direction: column;

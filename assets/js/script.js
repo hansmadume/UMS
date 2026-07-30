@@ -1,12 +1,4 @@
-/**
- * UMS - User Management System
- * JavaScript for interactive MUI effects
- */
-
 document.addEventListener("DOMContentLoaded", function () {
-  // =============================================
-  // Mobile Sidebar Toggle
-  // =============================================
   const menuToggle = document.getElementById("menuToggle");
   const sidebar = document.querySelector(".sidebar");
 
@@ -15,106 +7,84 @@ document.addEventListener("DOMContentLoaded", function () {
       sidebar.classList.toggle("open");
     });
 
-    // Close sidebar when clicking outside on mobile
     document.addEventListener("click", function (e) {
-      if (window.innerWidth <= 768) {
-        const isClickInsideSidebar = sidebar.contains(e.target);
-        const isClickOnMenuToggle = menuToggle.contains(e.target);
-        if (!isClickInsideSidebar && !isClickOnMenuToggle) {
-          sidebar.classList.remove("open");
-        }
+      if (window.innerWidth > 768) {
+        return;
+      }
+
+      if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+        sidebar.classList.remove("open");
       }
     });
   }
 
-  // =============================================
-  // MUI Input Float Label Fix
-  // =============================================
-  const inputs = document.querySelectorAll(".mui-input");
-  inputs.forEach(function (input) {
-    // If input has a value on load, add class
+  document.querySelectorAll(".mui-input").forEach(function (input) {
     if (input.value.trim() !== "") {
       input.classList.add("has-value");
     }
 
     input.addEventListener("input", function () {
-      if (this.value.trim() !== "") {
-        this.classList.add("has-value");
-      } else {
-        this.classList.remove("has-value");
-      }
+      this.classList.toggle("has-value", this.value.trim() !== "");
     });
   });
 
-  // =============================================
-  // Select Float Label Fix
-  // =============================================
-  const selects = document.querySelectorAll(".mui-select");
-  selects.forEach(function (select) {
-    // Mark as valid so label floats
+  document.querySelectorAll(".mui-select").forEach(function (select) {
     if (select.value) {
       select.classList.add("has-value");
     }
 
     select.addEventListener("change", function () {
-      if (this.value) {
-        this.classList.add("has-value");
-      } else {
-        this.classList.remove("has-value");
-      }
+      this.classList.toggle("has-value", this.value !== "");
     });
   });
 
-  // =============================================
-  // Button Ripple Effect
-  // =============================================
-  const buttons = document.querySelectorAll(".mui-btn");
-  buttons.forEach(function (btn) {
-    btn.addEventListener("click", function (e) {
-      // Remove any existing ripple
-      const existingRipple = this.querySelector(".ripple-effect");
-      if (existingRipple) {
-        existingRipple.remove();
+  document.querySelectorAll(".mui-btn").forEach(function (button) {
+    button.addEventListener("click", function (e) {
+      const oldRipple = this.querySelector(".ripple-effect");
+
+      if (oldRipple) {
+        oldRipple.remove();
       }
 
-      // Create ripple element
       const ripple = document.createElement("span");
-      ripple.classList.add("ripple-effect");
-
       const rect = this.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height);
-      const x = e.clientX - rect.left - size / 2;
-      const y = e.clientY - rect.top - size / 2;
 
+      ripple.classList.add("ripple-effect");
       ripple.style.width = ripple.style.height = size + "px";
-      ripple.style.left = x + "px";
-      ripple.style.top = y + "px";
+      ripple.style.left = e.clientX - rect.left - size / 2 + "px";
+      ripple.style.top = e.clientY - rect.top - size / 2 + "px";
 
       this.appendChild(ripple);
 
-      // Remove ripple after animation
       setTimeout(function () {
         ripple.remove();
       }, 600);
     });
   });
 
-  // =============================================
-  // Search Box Placeholder Management
-  // =============================================
-  const searchBoxes = document.querySelectorAll(".search-box .mui-input");
-  searchBoxes.forEach(function (input) {
-    // Ensure placeholder works with MUI label logic
+  document.querySelectorAll(".search-box .mui-input").forEach(function (input) {
     if (!input.hasAttribute("placeholder")) {
       input.setAttribute("placeholder", " ");
     }
   });
 
-  // =============================================
-  // AJAX Search/Filter (updates tables without full page refresh)
-  // =============================================
-  const ajaxSearchForms = document.querySelectorAll(".ajax-search-form");
-  ajaxSearchForms.forEach(function (form) {
+  function showFormMessage(form, message, type) {
+    let alert = form.querySelector(".form-validation-message");
+
+    if (!alert) {
+      alert = document.createElement("div");
+      alert.className = "form-validation-message login-alert";
+      form.prepend(alert);
+    }
+
+    alert.className =
+      "form-validation-message login-alert " +
+      (type === "success" ? "login-alert-info" : "login-alert-error");
+    alert.textContent = message;
+  }
+
+  document.querySelectorAll(".ajax-search-form").forEach(function (form) {
     const targetSelector = form.getAttribute("data-target");
     const target = targetSelector ? document.querySelector(targetSelector) : null;
     let searchTimer = null;
@@ -139,8 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return response.text();
         })
         .then(function (html) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, "text/html");
+          const doc = new DOMParser().parseFromString(html, "text/html");
           const updatedTarget = doc.querySelector(targetSelector);
 
           if (updatedTarget) {
@@ -172,24 +141,6 @@ document.addEventListener("DOMContentLoaded", function () {
       select.addEventListener("change", runSearch);
     });
   });
-
-  // =============================================
-  // Client-side Form Validation
-  // =============================================
-  function showFormMessage(form, message, type) {
-    let alert = form.querySelector(".form-validation-message");
-
-    if (!alert) {
-      alert = document.createElement("div");
-      alert.className = "form-validation-message login-alert";
-      form.prepend(alert);
-    }
-
-    alert.className =
-      "form-validation-message login-alert " +
-      (type === "success" ? "login-alert-info" : "login-alert-error");
-    alert.textContent = message;
-  }
 
   function validatePassword(password) {
     if (password.length < 8) {
@@ -272,20 +223,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // =============================================
-  // Demo: Alert on status badge click (for demo)
-  // =============================================
-  const statusBadges = document.querySelectorAll(".status-badge");
-  statusBadges.forEach(function (badge) {
+  document.querySelectorAll(".status-badge").forEach(function (badge) {
     badge.style.cursor = "pointer";
     badge.addEventListener("click", function () {
-      // Just a visual demo feedback
       this.style.transform = "scale(0.95)";
+
       setTimeout(() => {
         this.style.transform = "scale(1)";
       }, 150);
     });
   });
-
-  console.log("UMS - UI initialized successfully");
 });

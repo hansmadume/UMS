@@ -1,12 +1,7 @@
-/* =============================================
-   Dashboard Page Styles
-   ============================================= */
-
 .dashboard {
   max-width: 1200px;
 }
 
-/* Dashboard Card */
 .dashboard-card {
   padding: 0;
   overflow: hidden;
@@ -26,14 +21,12 @@
   color: var(--text-primary);
 }
 
-/* Dashboard Grid */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
 }
 
-/* Activity List */
 .activity-list {
   padding: 8px 0;
 }
@@ -80,7 +73,6 @@
   margin-top: 2px;
 }
 
-/* Dashboard Hero */
 .dashboard-hero {
   display: flex;
   justify-content: space-between;
@@ -143,7 +135,6 @@
   margin-bottom: 2px;
 }
 
-/* Quick Links */
 .quick-links-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -182,7 +173,6 @@
   margin-top: 4px;
 }
 
-/* Responsive */
 @media (max-width: 900px) {
   .dashboard-grid,
   .quick-links-grid {

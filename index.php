@@ -1,18 +1,13 @@
 <?php
-// UMS - User Management System
-// Main entry point / router
 
-// Include configuration and authentication helpers before any output
 require_once 'config/database.php';
 require_once 'includes/auth.php';
 require_once 'includes/users.php';
 
 startSecureSession();
 
-// Simple routing based on request
 $page = isset($_GET['page']) ? $_GET['page'] : 'login';
 
-// Allowed pages
 $allowed_pages = ['login', 'dashboard', 'profile', 'user_management', 'user_roles', 'audit_logs', 'logout'];
 
 if (!in_array($page, $allowed_pages, true)) {
@@ -69,7 +64,6 @@ handleProfileManagementRequest();
 handleUserManagementRequest();
 handleRoleManagementRequest();
 
-// Include header
 require_once 'includes/header.php';
 
 if (in_array($page, $allowed_pages, true) && $page !== 'logout') {
@@ -78,5 +72,4 @@ if (in_array($page, $allowed_pages, true) && $page !== 'logout') {
     require_once 'pages/login.php';
 }
 
-// Include footer
 require_once 'includes/footer.php';

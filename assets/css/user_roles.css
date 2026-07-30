@@ -1,12 +1,7 @@
-/* =============================================
-   User Roles Page Styles
-   ============================================= */
-
 .user-roles {
   max-width: 1000px;
 }
 
-/* Role cell in table */
 .role-cell {
   display: flex;
   align-items: center;
@@ -25,7 +20,6 @@ tr:hover .role-icon {
   background-color: rgba(0, 200, 83, 0.2);
 }
 
-/* Role count badge */
 .role-count {
   display: inline-flex;
   align-items: center;
@@ -40,7 +34,6 @@ tr:hover .role-icon {
   font-weight: 500;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .mui-table th:nth-child(2),
   .mui-table td:nth-child(2) {
