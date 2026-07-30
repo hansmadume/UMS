@@ -111,76 +111,82 @@ try {
                     <input type="hidden" name="role_id" value="<?php echo (int) $roleManagementEditRole['id']; ?>">
                 <?php endif; ?>
 
-                <div class="mui-input-group">
-                    <input
-                        type="text"
-                        class="mui-input"
-                        name="name"
-                        placeholder="Role Name"
-                        value="<?php echo roleManagementPageEscape((string) ($roleManagementEditRole['name'] ?? '')); ?>"
-                        required
-                    >
-                    <label class="mui-label">Role Name</label>
-                </div>
+                <div class="form-grid">
+                    <div class="mui-input-group">
+                        <input
+                            type="text"
+                            class="mui-input"
+                            name="name"
+                            placeholder="Role Name"
+                            value="<?php echo roleManagementPageEscape((string) ($roleManagementEditRole['name'] ?? '')); ?>"
+                            required
+                        >
+                        <label class="mui-label">Role Name</label>
+                    </div>
 
-                <div class="mui-input-group">
-                    <input
-                        type="text"
-                        class="mui-input"
-                        name="description"
-                        placeholder="Description"
-                        value="<?php echo roleManagementPageEscape((string) ($roleManagementEditRole['description'] ?? '')); ?>"
-                    >
-                    <label class="mui-label">Description</label>
-                </div>
+                    <div class="mui-input-group">
+                        <input
+                            type="text"
+                            class="mui-input"
+                            name="description"
+                            placeholder="Description"
+                            value="<?php echo roleManagementPageEscape((string) ($roleManagementEditRole['description'] ?? '')); ?>"
+                        >
+                        <label class="mui-label">Description</label>
+                    </div>
 
-                <div class="mui-input-group">
-                    <select class="mui-input" name="status">
-                        <?php $editRoleStatus = function_exists('roleManagementDisplayStatus') ? strtolower(roleManagementDisplayStatus($roleManagementEditRole ?? [])) : strtolower((string) ($roleManagementEditRole['status'] ?? 'active')); ?>
-                        <option value="active" <?php echo $editRoleStatus === 'active' ? 'selected' : ''; ?>>Active</option>
-                        <option value="inactive" <?php echo $editRoleStatus === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                    </select>
-                    <label class="mui-label">Status</label>
-                </div>
+                    <div class="mui-input-group">
+                        <select class="mui-input" name="status">
+                            <?php $editRoleStatus = function_exists('roleManagementDisplayStatus') ? strtolower(roleManagementDisplayStatus($roleManagementEditRole ?? [])) : strtolower((string) ($roleManagementEditRole['status'] ?? 'active')); ?>
+                            <option value="active" <?php echo $editRoleStatus === 'active' ? 'selected' : ''; ?>>Active</option>
+                            <option value="inactive" <?php echo $editRoleStatus === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                        <label class="mui-label">Status</label>
+                    </div>
 
-                <div class="mui-input-group">
-                    <input
-                        type="text"
-                        class="mui-input"
-                        name="icon"
-                        placeholder="Material Icon Name"
-                        value="<?php echo roleManagementPageEscape((string) ($roleManagementEditRole['icon'] ?? '')); ?>"
-                    >
-                    <label class="mui-label">Icon</label>
+                    <div class="mui-input-group">
+                        <input
+                            type="text"
+                            class="mui-input"
+                            name="icon"
+                            placeholder="Material Icon Name"
+                            value="<?php echo roleManagementPageEscape((string) ($roleManagementEditRole['icon'] ?? '')); ?>"
+                        >
+                        <label class="mui-label">Icon</label>
+                    </div>
                 </div>
 
                 <?php if (!empty($roleManagementPermissions)): ?>
                     <div class="mui-input-group">
-                        <label class="mui-label" style="position: static; display: block; margin-bottom: 8px;">Permissions</label>
-                        <?php $selectedPermissionIds = array_map('intval', (array) ($roleManagementEditRole['permission_ids'] ?? [])); ?>
-                        <?php foreach ($roleManagementPermissions as $permission): ?>
-                            <?php $permissionId = (int) ($permission['id'] ?? 0); ?>
-                            <label style="display: inline-flex; align-items: center; gap: 6px; margin: 0 16px 10px 0;">
-                                <input
-                                    type="checkbox"
-                                    name="permission_ids[]"
-                                    value="<?php echo $permissionId; ?>"
-                                    <?php echo in_array($permissionId, $selectedPermissionIds, true) ? 'checked' : ''; ?>
-                                >
-                                <?php echo roleManagementPageEscape((string) ($permission['name'] ?? 'Permission')); ?>
-                            </label>
-                        <?php endforeach; ?>
+                        <label class="mui-label" style="position: static; display: block; margin-bottom: 12px; font-size:0.85rem; color:var(--text-secondary);">Permissions</label>
+                        <div class="permissions-grid">
+                            <?php $selectedPermissionIds = array_map('intval', (array) ($roleManagementEditRole['permission_ids'] ?? [])); ?>
+                            <?php foreach ($roleManagementPermissions as $permission): ?>
+                                <?php $permissionId = (int) ($permission['id'] ?? 0); ?>
+                                <label class="permission-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="permission_ids[]"
+                                        value="<?php echo $permissionId; ?>"
+                                        <?php echo in_array($permissionId, $selectedPermissionIds, true) ? 'checked' : ''; ?>
+                                    >
+                                    <?php echo roleManagementPageEscape((string) ($permission['name'] ?? 'Permission')); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
 
-                <button type="submit" class="mui-btn mui-btn-contained">
-                    <span class="material-icons"><?php echo $roleManagementEditRole ? 'save' : 'add'; ?></span>
-                    <?php echo $roleManagementEditRole ? 'Update Role' : 'Add Role'; ?>
-                </button>
+                <div class="form-actions">
+                    <button type="submit" class="mui-btn mui-btn-contained">
+                        <span class="material-icons"><?php echo $roleManagementEditRole ? 'save' : 'add'; ?></span>
+                        <?php echo $roleManagementEditRole ? 'Update Role' : 'Add Role'; ?>
+                    </button>
 
-                <?php if ($roleManagementEditRole): ?>
-                    <a href="index.php?page=user_roles" class="mui-btn mui-btn-outlined">Cancel</a>
-                <?php endif; ?>
+                    <?php if ($roleManagementEditRole): ?>
+                        <a href="index.php?page=user_roles" class="mui-btn mui-btn-outlined">Cancel</a>
+                    <?php endif; ?>
+                </div>
             </form>
         </div>
     <?php endif; ?>

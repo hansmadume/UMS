@@ -704,11 +704,60 @@ ul {
   align-items: center;
   justify-content: center;
   border: 3px solid var(--green-primary);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .profile-avatar .material-icons {
   font-size: 48px;
   color: var(--green-light);
+}
+
+/* ======= Shared Utility Classes ======= */
+
+/* Form grid - 2-column layout for forms */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  margin-bottom: 8px;
+}
+
+.form-grid .mui-input-group {
+  margin-bottom: 0;
+}
+
+.form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+/* Form actions - button row at bottom of form cards */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--black-border);
+}
+
+.form-actions .mui-btn {
+  flex: 0 1 auto;
+}
+
+/* ======= Empty state for tables ======= */
+.table-empty-state td[colspan] {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.table-empty-state td[colspan]::before {
+  font-family: "Material Icons";
+  display: block;
+  font-size: 40px;
+  color: var(--black-tertiary);
+  margin-bottom: 12px;
 }
 
 .main-footer {

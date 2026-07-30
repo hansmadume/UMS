@@ -109,99 +109,103 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
                     <input type="hidden" name="user_id" value="<?php echo (int) $userManagementEditUser['id']; ?>">
                 <?php endif; ?>
 
-                <div class="mui-input-group">
-                    <input type="text" class="mui-input" name="name" placeholder="Full Name" value="<?php echo userManagementPageEscape($formUserName); ?>" required>
-                    <label class="mui-label">Full Name</label>
-                </div>
-
-                <div class="mui-input-group">
-                    <input type="text" class="mui-input" name="username" placeholder="Username" value="<?php echo userManagementPageEscape($formUsername); ?>" required>
-                    <label class="mui-label">Username</label>
-                </div>
-
-                <div class="mui-input-group">
-                    <input type="email" class="mui-input" name="email" placeholder="Email" value="<?php echo userManagementPageEscape($formEmail); ?>" required>
-                    <label class="mui-label">Email</label>
-                </div>
-
-                <div class="mui-input-group">
-                    <input type="text" class="mui-input" name="contact_number" placeholder="Contact Number" value="<?php echo userManagementPageEscape($formContact); ?>">
-                    <label class="mui-label">Contact Number</label>
-                </div>
-
-                <div class="mui-input-group">
-                    <input type="text" class="mui-input" name="address" placeholder="Address" value="<?php echo userManagementPageEscape($formAddress); ?>">
-                    <label class="mui-label">Address</label>
-                </div>
-
-                <?php if (!empty($roles)): ?>
+                <div class="form-grid">
                     <div class="mui-input-group">
-                        <select class="mui-input" name="role_id" <?php echo $isEditingSelf ? 'disabled' : ''; ?>>
-                            <?php foreach ($roles as $role): ?>
-                                <option
-                                    value="<?php echo (int) $role['id']; ?>"
-                                    <?php echo $formRoleId === (int) $role['id'] ? 'selected' : ''; ?>
-                                >
-                                    <?php echo userManagementPageEscape((string) $role['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <label class="mui-label">Role<?php echo $isEditingSelf ? ' - cannot edit your own role' : ''; ?></label>
+                        <input type="text" class="mui-input" name="name" placeholder="Full Name" value="<?php echo userManagementPageEscape($formUserName); ?>" required>
+                        <label class="mui-label">Full Name</label>
                     </div>
-                <?php else: ?>
+
+                    <div class="mui-input-group">
+                        <input type="text" class="mui-input" name="username" placeholder="Username" value="<?php echo userManagementPageEscape($formUsername); ?>" required>
+                        <label class="mui-label">Username</label>
+                    </div>
+
+                    <div class="mui-input-group">
+                        <input type="email" class="mui-input" name="email" placeholder="Email" value="<?php echo userManagementPageEscape($formEmail); ?>" required>
+                        <label class="mui-label">Email</label>
+                    </div>
+
+                    <div class="mui-input-group">
+                        <input type="text" class="mui-input" name="contact_number" placeholder="Contact Number" value="<?php echo userManagementPageEscape($formContact); ?>">
+                        <label class="mui-label">Contact Number</label>
+                    </div>
+
+                    <div class="mui-input-group">
+                        <input type="text" class="mui-input" name="address" placeholder="Address" value="<?php echo userManagementPageEscape($formAddress); ?>">
+                        <label class="mui-label">Address</label>
+                    </div>
+
+                    <?php if (!empty($roles)): ?>
+                        <div class="mui-input-group">
+                            <select class="mui-input" name="role_id" <?php echo $isEditingSelf ? 'disabled' : ''; ?>>
+                                <?php foreach ($roles as $role): ?>
+                                    <option
+                                        value="<?php echo (int) $role['id']; ?>"
+                                        <?php echo $formRoleId === (int) $role['id'] ? 'selected' : ''; ?>
+                                    >
+                                        <?php echo userManagementPageEscape((string) $role['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <label class="mui-label">Role<?php echo $isEditingSelf ? ' - cannot edit your own role' : ''; ?></label>
+                        </div>
+                    <?php else: ?>
+                        <div class="mui-input-group">
+                            <input
+                                type="text"
+                                class="mui-input"
+                                name="role"
+                                placeholder="Role"
+                                value="<?php echo userManagementPageEscape($formRole); ?>"
+                                <?php echo $isEditingSelf ? 'readonly' : ''; ?>
+                            >
+                            <label class="mui-label">Role<?php echo $isEditingSelf ? ' - cannot edit your own role' : ''; ?></label>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="mui-input-group">
+                        <select class="mui-input" name="status" <?php echo $isEditingSelf ? 'disabled' : ''; ?>>
+                            <option value="active" <?php echo $formStatus === 'active' ? 'selected' : ''; ?>>Active</option>
+                            <option value="inactive" <?php echo $formStatus === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                        <label class="mui-label">Status<?php echo $isEditingSelf ? ' - cannot activate/deactivate your own account' : ''; ?></label>
+                    </div>
+
                     <div class="mui-input-group">
                         <input
-                            type="text"
+                            type="password"
                             class="mui-input"
-                            name="role"
-                            placeholder="Role"
-                            value="<?php echo userManagementPageEscape($formRole); ?>"
-                            <?php echo $isEditingSelf ? 'readonly' : ''; ?>
+                            name="password"
+                            placeholder="<?php echo $userManagementEditUser ? 'New Password (leave blank to keep current)' : 'Password'; ?>"
+                            autocomplete="new-password"
+                            <?php echo $userManagementEditUser ? '' : 'required'; ?>
                         >
-                        <label class="mui-label">Role<?php echo $isEditingSelf ? ' - cannot edit your own role' : ''; ?></label>
+                        <label class="mui-label">Password</label>
                     </div>
-                <?php endif; ?>
 
-                <div class="mui-input-group">
-                    <select class="mui-input" name="status" <?php echo $isEditingSelf ? 'disabled' : ''; ?>>
-                        <option value="active" <?php echo $formStatus === 'active' ? 'selected' : ''; ?>>Active</option>
-                        <option value="inactive" <?php echo $formStatus === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                    </select>
-                    <label class="mui-label">Status<?php echo $isEditingSelf ? ' - cannot activate/deactivate your own account' : ''; ?></label>
+                    <div class="mui-input-group">
+                        <input
+                            type="password"
+                            class="mui-input"
+                            name="confirm_password"
+                            placeholder="Confirm Password"
+                            autocomplete="new-password"
+                            <?php echo $userManagementEditUser ? '' : 'required'; ?>
+                        >
+                        <label class="mui-label">Confirm Password</label>
+                    </div>
                 </div>
 
-                <div class="mui-input-group">
-                    <input
-                        type="password"
-                        class="mui-input"
-                        name="password"
-                        placeholder="<?php echo $userManagementEditUser ? 'New Password (leave blank to keep current)' : 'Password'; ?>"
-                        autocomplete="new-password"
-                        <?php echo $userManagementEditUser ? '' : 'required'; ?>
-                    >
-                    <label class="mui-label">Password</label>
+                <div class="form-actions">
+                    <button type="submit" class="mui-btn mui-btn-contained">
+                        <span class="material-icons"><?php echo $userManagementEditUser ? 'save' : 'person_add'; ?></span>
+                        <?php echo $userManagementEditUser ? 'Update User' : 'Add User'; ?>
+                    </button>
+
+                    <?php if ($userManagementEditUser): ?>
+                        <a href="index.php?page=user_management" class="mui-btn mui-btn-outlined">Cancel</a>
+                    <?php endif; ?>
                 </div>
-
-                <div class="mui-input-group">
-                    <input
-                        type="password"
-                        class="mui-input"
-                        name="confirm_password"
-                        placeholder="Confirm Password"
-                        autocomplete="new-password"
-                        <?php echo $userManagementEditUser ? '' : 'required'; ?>
-                    >
-                    <label class="mui-label">Confirm Password</label>
-                </div>
-
-                <button type="submit" class="mui-btn mui-btn-contained">
-                    <span class="material-icons"><?php echo $userManagementEditUser ? 'save' : 'person_add'; ?></span>
-                    <?php echo $userManagementEditUser ? 'Update User' : 'Add User'; ?>
-                </button>
-
-                <?php if ($userManagementEditUser): ?>
-                    <a href="index.php?page=user_management" class="mui-btn mui-btn-outlined">Cancel</a>
-                <?php endif; ?>
             </form>
         </div>
     <?php endif; ?>
