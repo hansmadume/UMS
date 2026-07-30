@@ -111,6 +111,168 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // =============================================
+  // AJAX Search/Filter (updates tables without full page refresh)
+  // =============================================
+  const ajaxSearchForms = document.querySelectorAll(".ajax-search-form");
+  ajaxSearchForms.forEach(function (form) {
+    const targetSelector = form.getAttribute("data-target");
+    const target = targetSelector ? document.querySelector(targetSelector) : null;
+    let searchTimer = null;
+
+    function runSearch() {
+      if (!target) {
+        form.submit();
+        return;
+      }
+
+      const params = new URLSearchParams(new FormData(form));
+      const url = form.getAttribute("action") + "?" + params.toString();
+
+      target.style.opacity = "0.5";
+
+      fetch(url, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then(function (response) {
+          return response.text();
+        })
+        .then(function (html) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const updatedTarget = doc.querySelector(targetSelector);
+
+          if (updatedTarget) {
+            target.innerHTML = updatedTarget.innerHTML;
+            window.history.replaceState({}, "", url);
+          }
+        })
+        .catch(function () {
+          showFormMessage(form, "Search failed. Please try again.", "error");
+        })
+        .finally(function () {
+          target.style.opacity = "1";
+        });
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      runSearch();
+    });
+
+    form.querySelectorAll("input[type='text'], input[type='search']").forEach(function (input) {
+      input.addEventListener("input", function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(runSearch, 300);
+      });
+    });
+
+    form.querySelectorAll("select").forEach(function (select) {
+      select.addEventListener("change", runSearch);
+    });
+  });
+
+  // =============================================
+  // Client-side Form Validation
+  // =============================================
+  function showFormMessage(form, message, type) {
+    let alert = form.querySelector(".form-validation-message");
+
+    if (!alert) {
+      alert = document.createElement("div");
+      alert.className = "form-validation-message login-alert";
+      form.prepend(alert);
+    }
+
+    alert.className =
+      "form-validation-message login-alert " +
+      (type === "success" ? "login-alert-info" : "login-alert-error");
+    alert.textContent = message;
+  }
+
+  function validatePassword(password) {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return "Password must include at least one uppercase letter.";
+    }
+
+    if (!/[a-z]/.test(password)) {
+      return "Password must include at least one lowercase letter.";
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return "Password must include at least one number.";
+    }
+
+    return "";
+  }
+
+  document.querySelectorAll("form[data-validate]").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+      const validationType = form.getAttribute("data-validate");
+      const name = form.querySelector("[name='name']");
+      const username = form.querySelector("[name='username']");
+      const email = form.querySelector("[name='email']");
+      const password = form.querySelector("[name='password']");
+      const confirmPassword = form.querySelector("[name='confirm_password']");
+      const role = form.querySelector("[name='role'], [name='role_id']");
+      const roleName = validationType === "role" ? form.querySelector("[name='name']") : null;
+      const errors = [];
+
+      if (validationType === "role") {
+        if (!roleName || roleName.value.trim() === "") {
+          errors.push("Role Name is required.");
+        }
+      } else {
+        if (name && name.value.trim() === "") {
+          errors.push("Full Name is required.");
+        }
+
+        if (validationType === "user") {
+          if (username && username.value.trim() === "") {
+            errors.push("Username is required.");
+          } else if (username && username.value.trim().length < 4) {
+            errors.push("Username must be at least 4 characters.");
+          }
+
+          if (email && email.value.trim() === "") {
+            errors.push("Email is required.");
+          } else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+            errors.push("A valid email address is required.");
+          }
+
+          if (role && !role.disabled && role.value.trim() === "") {
+            errors.push("Role is required.");
+          }
+        }
+
+        if (password && password.value !== "") {
+          const passwordError = validatePassword(password.value);
+
+          if (passwordError !== "") {
+            errors.push(passwordError);
+          }
+
+          if (confirmPassword && password.value !== confirmPassword.value) {
+            errors.push("Password confirmation does not match.");
+          }
+        } else if (validationType === "user" && password && password.hasAttribute("required")) {
+          errors.push("Password is required.");
+        }
+      }
+
+      if (errors.length > 0) {
+        event.preventDefault();
+        showFormMessage(form, errors.join(" "), "error");
+      }
+    });
+  });
+
+  // =============================================
   // Demo: Alert on status badge click (for demo)
   // =============================================
   const statusBadges = document.querySelectorAll(".status-badge");

@@ -37,6 +37,89 @@ function redirectTo(string $page): void
     exit;
 }
 
+function appEscape(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+}
+
+function csrfToken(): string
+{
+    if (empty($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    return $_SESSION['csrf_token'];
+}
+
+function csrfField(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . appEscape(csrfToken()) . '">';
+}
+
+function verifyCsrfToken(?string $token): bool
+{
+    return is_string($token)
+        && $token !== ''
+        && !empty($_SESSION['csrf_token'])
+        && hash_equals((string) $_SESSION['csrf_token'], $token);
+}
+
+function requireValidCsrfToken(): void
+{
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+        throw new RuntimeException('Your request could not be verified. Please refresh the page and try again.');
+    }
+}
+
+function authEnsureAuditLogTable(PDO $pdo): void
+{
+    try {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS audit_logs (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NULL,
+                user_name VARCHAR(255) NULL,
+                action VARCHAR(100) NOT NULL,
+                ip_address VARCHAR(45) NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_audit_logs_user_id (user_id),
+                INDEX idx_audit_logs_action (action),
+                INDEX idx_audit_logs_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+    } catch (Throwable $exception) {
+        error_log('Audit log schema check failed: ' . $exception->getMessage());
+    }
+}
+
+function recordAuditLog(string $action, ?array $user = null): void
+{
+    try {
+        $pdo = getDatabaseConnection();
+        authEnsureAuditLogTable($pdo);
+
+        $sessionUser = $user ?? ($_SESSION['user'] ?? null);
+        $userId = is_array($sessionUser) && !empty($sessionUser['id']) ? (int) $sessionUser['id'] : null;
+        $userName = is_array($sessionUser)
+            ? (string) ($sessionUser['name'] ?? $sessionUser['username'] ?? $sessionUser['email'] ?? 'Unknown')
+            : 'Guest';
+
+        $statement = $pdo->prepare(
+            'INSERT INTO audit_logs (user_id, user_name, action, ip_address, created_at)
+             VALUES (:user_id, :user_name, :action, :ip_address, :created_at)'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'user_name' => $userName,
+            'action' => $action,
+            'ip_address' => substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    } catch (Throwable $exception) {
+        error_log('Audit log write failed: ' . $exception->getMessage());
+    }
+}
+
 function isAuthenticated(): bool
 {
     return !empty($_SESSION['user']) && !empty($_SESSION['user']['id']);
@@ -90,6 +173,10 @@ function persistCurrentSessionCookie(int $lifetime): void
 
 function logoutUser(string $reason = ''): void
 {
+    if (isAuthenticated()) {
+        recordAuditLog('Logout');
+    }
+
     $_SESSION = [];
 
     if (ini_get('session.use_cookies')) {
@@ -253,19 +340,79 @@ function buildSessionUser(array $user): array
     $username = (string) ($user['username'] ?? '');
     $email = (string) ($user['email'] ?? '');
     $role = (string) ($user['role_name'] ?? $user['role'] ?? $user['user_role'] ?? $user['type'] ?? '');
+    $normalizedRole = strtolower($role);
     $isAdmin = !empty($user['is_admin'])
         || strtolower($username) === 'admin'
         || strtolower($email) === 'admin'
-        || in_array(strtolower($role), ['admin', 'administrator', 'super admin'], true);
+        || in_array($normalizedRole, ['admin', 'administrator', 'super admin'], true);
 
     return [
         'id' => $user['id'],
         'username' => $username,
         'email' => $email,
         'name' => $user['full_name'] ?? $user['name'] ?? $username ?? $email ?? 'User',
-        'role' => $isAdmin ? 'Administrator' : ($role !== '' ? $role : 'User'),
+        'role' => $isAdmin ? 'Administrator' : ($role !== '' ? $role : 'Guest'),
         'is_admin' => $isAdmin,
     ];
+}
+
+function userRoleKey(?array $user = null): string
+{
+    $user = $user ?? getAuthenticatedUser();
+
+    if (!$user) {
+        return 'guest';
+    }
+
+    if (!empty($user['is_admin'])) {
+        return 'administrator';
+    }
+
+    $role = strtolower(trim((string) ($user['role'] ?? 'guest')));
+
+    if (in_array($role, ['admin', 'administrator', 'super admin'], true)) {
+        return 'administrator';
+    }
+
+    if ($role === 'manager') {
+        return 'manager';
+    }
+
+    if ($role === 'staff') {
+        return 'staff';
+    }
+
+    return 'guest';
+}
+
+function userHasRole(array $allowedRoles, ?array $user = null): bool
+{
+    return in_array(userRoleKey($user), array_map('strtolower', $allowedRoles), true);
+}
+
+function canAccessPage(string $page): bool
+{
+    if ($page === 'dashboard' || $page === 'profile') {
+        return isAuthenticated();
+    }
+
+    if ($page === 'user_management') {
+        return userHasRole(['administrator', 'manager']);
+    }
+
+    if ($page === 'user_roles' || $page === 'audit_logs') {
+        return userHasRole(['administrator']);
+    }
+
+    return true;
+}
+
+function requirePageAccess(string $page): void
+{
+    if (!canAccessPage($page)) {
+        $_SESSION['login_notice'] = 'You are not authorized to access that page.';
+        redirectTo('dashboard');
+    }
 }
 
 function attemptLogin(string $identifier, string $password, bool $rememberMe = false): bool
@@ -273,6 +420,7 @@ function attemptLogin(string $identifier, string $password, bool $rememberMe = f
     $user = findUserByIdentifier($identifier);
 
     if (!$user || !userIsActive($user) || !passwordMatches($password, getUserPasswordHash($user))) {
+        recordAuditLog('Login Failed', ['id' => null, 'name' => $identifier]);
         return false;
     }
 
@@ -280,6 +428,7 @@ function attemptLogin(string $identifier, string $password, bool $rememberMe = f
 
     $_SESSION['user'] = buildSessionUser($user);
     refreshSessionActivity();
+    recordAuditLog('Login Successful', $_SESSION['user']);
 
     try {
         $pdo = getDatabaseConnection();

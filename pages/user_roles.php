@@ -2,6 +2,7 @@
 $roleManagementRoles = [];
 $roleManagementPermissions = [];
 $roleManagementError = '';
+$roleManagementSearch = trim((string) ($_GET['search'] ?? ''));
 $roleManagementFlash = function_exists('getRoleManagementFlash') ? getRoleManagementFlash() : null;
 $roleManagementIsAdmin = function_exists('userManagementCurrentUserIsAdmin') && userManagementCurrentUserIsAdmin();
 $roleManagementEditRoleId = (int) ($_GET['edit_role'] ?? 0);
@@ -49,7 +50,7 @@ try {
     $pdo = getDatabaseConnection();
 
     if (function_exists('roleManagementFetchRoles')) {
-        $roleManagementRoles = roleManagementFetchRoles($pdo);
+        $roleManagementRoles = roleManagementFetchRoles($pdo, $roleManagementSearch);
     }
 
     if (function_exists('roleManagementFetchPermissions')) {
@@ -68,6 +69,24 @@ try {
 <div class="user-roles">
     <div class="section-header">
         <h2>User Roles</h2>
+        <div class="header-actions">
+            <form action="index.php" method="GET" class="search-box ajax-search-form" data-target="#rolesTableBody" data-table="roles">
+                <input type="hidden" name="page" value="user_roles">
+                <span class="material-icons">search</span>
+                <input
+                    type="text"
+                    class="mui-input"
+                    id="searchRoles"
+                    name="search"
+                    placeholder="Search by role name..."
+                    value="<?php echo roleManagementPageEscape($roleManagementSearch); ?>"
+                >
+                <button type="submit" class="mui-btn mui-btn-contained">
+                    <span class="material-icons">search</span>
+                    Search
+                </button>
+            </form>
+        </div>
     </div>
 
     <?php if (!empty($roleManagementFlash)): ?>
@@ -85,7 +104,8 @@ try {
     <?php if ($roleManagementIsAdmin): ?>
         <div class="mui-card">
             <h3><?php echo $roleManagementEditRole ? 'Edit Role' : 'Add Role'; ?></h3>
-            <form action="index.php?page=user_roles" method="POST" class="user-form">
+            <form action="index.php?page=user_roles" method="POST" class="user-form" data-validate="role">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="role_action" value="<?php echo $roleManagementEditRole ? 'update' : 'create'; ?>">
                 <?php if ($roleManagementEditRole): ?>
                     <input type="hidden" name="role_id" value="<?php echo (int) $roleManagementEditRole['id']; ?>">
@@ -179,7 +199,7 @@ try {
                     <?php endif; ?>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="rolesTableBody">
                 <?php if (!empty($roleManagementRoles)): ?>
                     <?php foreach ($roleManagementRoles as $role): ?>
                         <?php
@@ -222,6 +242,7 @@ try {
                                             <span class="material-icons">edit</span>
                                         </a>
                                         <form action="index.php?page=user_roles" method="POST">
+                                            <?php echo csrfField(); ?>
                                             <input type="hidden" name="role_action" value="delete">
                                             <input type="hidden" name="role_id" value="<?php echo $roleId; ?>">
                                             <button

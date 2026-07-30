@@ -143,7 +143,8 @@ $statusClass = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $profileStatus));
 
     <div class="mui-card profile-form-card">
         <h3 class="form-title">Edit Profile</h3>
-        <form action="index.php?page=profile" method="POST" enctype="multipart/form-data" class="profile-form">
+        <form action="index.php?page=profile" method="POST" enctype="multipart/form-data" class="profile-form" data-validate="profile">
+            <?php echo csrfField(); ?>
             <div class="form-row">
                 <div class="mui-input-group">
                     <input

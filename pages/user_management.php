@@ -9,6 +9,7 @@ $userManagementEditUserId = (int) ($_GET['edit_user'] ?? 0);
 $userManagementEditUser = null;
 $userManagementFlash = function_exists('getUserManagementFlash') ? getUserManagementFlash() : null;
 $userManagementIsAdmin = function_exists('userManagementCurrentUserIsAdmin') && userManagementCurrentUserIsAdmin();
+$userManagementCanManage = $userManagementIsAdmin || (function_exists('userHasRole') && userHasRole(['manager']));
 $currentUser = function_exists('getAuthenticatedUser') ? getAuthenticatedUser() : null;
 
 function userManagementPageEscape(string $value): string
@@ -51,7 +52,7 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
     <div class="section-header">
         <h2>User Management</h2>
         <div class="header-actions">
-            <form action="index.php" method="GET" class="search-box">
+            <form action="index.php" method="GET" class="search-box ajax-search-form" data-target="#usersTableBody">
                 <input type="hidden" name="page" value="user_management">
                 <span class="material-icons">search</span>
                 <input
@@ -98,10 +99,11 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
         </div>
     <?php endif; ?>
 
-    <?php if ($userManagementIsAdmin): ?>
+    <?php if ($userManagementCanManage): ?>
         <div class="mui-card">
             <h3><?php echo $userManagementEditUser ? 'Edit User' : 'Add User'; ?></h3>
-            <form action="index.php?page=user_management" method="POST" class="user-form">
+            <form action="index.php?page=user_management" method="POST" class="user-form" data-validate="user">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="user_action" value="<?php echo $userManagementEditUser ? 'update' : 'create'; ?>">
                 <?php if ($userManagementEditUser): ?>
                     <input type="hidden" name="user_id" value="<?php echo (int) $userManagementEditUser['id']; ?>">
@@ -216,12 +218,12 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
                     <th>Status</th>
                     <th>Date Created</th>
                     <th>Last Login</th>
-                    <?php if ($userManagementIsAdmin): ?>
+                    <?php if ($userManagementCanManage): ?>
                         <th>Actions</th>
                     <?php endif; ?>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="usersTableBody">
                 <?php if (!empty($users)): ?>
                     <?php foreach ($users as $user): ?>
                         <?php
@@ -252,7 +254,7 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
                             </td>
                             <td><?php echo userManagementPageEscape($displayCreated); ?></td>
                             <td><?php echo userManagementPageEscape($displayLastLogin); ?></td>
-                            <?php if ($userManagementIsAdmin): ?>
+                            <?php if ($userManagementCanManage): ?>
                                 <td>
                                     <div class="table-actions">
                                         <a
@@ -263,6 +265,7 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
                                             <span class="material-icons">edit</span>
                                         </a>
                                         <form action="index.php?page=user_management" method="POST">
+                                            <?php echo csrfField(); ?>
                                             <input type="hidden" name="user_action" value="delete">
                                             <input type="hidden" name="user_id" value="<?php echo $userId; ?>">
                                             <button
@@ -281,7 +284,7 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="<?php echo $userManagementIsAdmin ? '9' : '8'; ?>">
+                        <td colspan="<?php echo $userManagementCanManage ? '9' : '8'; ?>">
                             No users found.
                         </td>
                     </tr>

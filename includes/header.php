@@ -27,6 +27,9 @@
 </head>
 <body>
     <?php if ($page !== 'login'): ?>
+    <?php $current_user = function_exists('getAuthenticatedUser') ? getAuthenticatedUser() : null; ?>
+    <?php $can_manage_users = function_exists('userHasRole') && userHasRole(['administrator', 'manager'], $current_user); ?>
+    <?php $can_manage_roles = function_exists('userHasRole') && userHasRole(['administrator'], $current_user); ?>
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -38,14 +41,22 @@
                 <span class="material-icons">dashboard</span>
                 <span class="nav-text">Dashboard</span>
             </a>
-            <a href="index.php?page=user_management" class="nav-item <?php echo $page === 'user_management' ? 'active' : ''; ?>">
-                <span class="material-icons">group</span>
-                <span class="nav-text">Users</span>
-            </a>
-            <a href="index.php?page=user_roles" class="nav-item <?php echo $page === 'user_roles' ? 'active' : ''; ?>">
-                <span class="material-icons">security</span>
-                <span class="nav-text">Roles</span>
-            </a>
+            <?php if ($can_manage_users): ?>
+                <a href="index.php?page=user_management" class="nav-item <?php echo $page === 'user_management' ? 'active' : ''; ?>">
+                    <span class="material-icons">group</span>
+                    <span class="nav-text">Users</span>
+                </a>
+            <?php endif; ?>
+            <?php if ($can_manage_roles): ?>
+                <a href="index.php?page=user_roles" class="nav-item <?php echo $page === 'user_roles' ? 'active' : ''; ?>">
+                    <span class="material-icons">security</span>
+                    <span class="nav-text">Roles</span>
+                </a>
+                <a href="index.php?page=audit_logs" class="nav-item <?php echo $page === 'audit_logs' ? 'active' : ''; ?>">
+                    <span class="material-icons">history</span>
+                    <span class="nav-text">Audit Logs</span>
+                </a>
+            <?php endif; ?>
             <a href="index.php?page=profile" class="nav-item <?php echo $page === 'profile' ? 'active' : ''; ?>">
                 <span class="material-icons">person</span>
                 <span class="nav-text">Profile</span>
@@ -66,7 +77,6 @@
                 <h3 class="topbar-title"><?php echo ucfirst(str_replace('_', ' ', $page)); ?></h3>
             </div>
             <div class="topbar-right">
-                <?php $current_user = function_exists('getAuthenticatedUser') ? getAuthenticatedUser() : null; ?>
                 <?php if ($current_user): ?>
                     <span class="topbar-user">
                         <?php echo htmlspecialchars($current_user['name'] ?: $current_user['username'] ?: $current_user['email'], ENT_QUOTES, 'UTF-8'); ?>

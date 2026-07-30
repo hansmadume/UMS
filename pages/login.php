@@ -20,6 +20,7 @@
     <?php endif; ?>
 
     <form action="index.php?page=login" method="POST" class="login-form" novalidate>
+        <?php echo csrfField(); ?>
         <div class="mui-input-group">
             <input
                 type="text"

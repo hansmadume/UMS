@@ -59,7 +59,27 @@ function userManagementAvailableColumns(PDO $pdo, string $tableName, array $cand
 function userManagementEnsureUserSchema(PDO $pdo): void
 {
     if (!userManagementTableExists($pdo, 'users')) {
-        return;
+        $pdo->exec(
+            'CREATE TABLE users (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                full_name VARCHAR(150) NOT NULL,
+                username VARCHAR(100) NOT NULL UNIQUE,
+                email VARCHAR(190) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                role_id INT UNSIGNED NULL,
+                status VARCHAR(20) NOT NULL DEFAULT \'active\',
+                contact_number VARCHAR(50) NULL,
+                address TEXT NULL,
+                profile_photo VARCHAR(255) NULL,
+                last_login DATETIME NULL,
+                deleted_at DATETIME NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_users_role_id (role_id),
+                INDEX idx_users_status (status),
+                INDEX idx_users_deleted_at (deleted_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
     }
 
     $columns = [
@@ -267,10 +287,15 @@ function userManagementCurrentUserIsAdmin(): bool
     }
 }
 
+function userManagementCanManageUsers(): bool
+{
+    return userManagementCurrentUserIsAdmin() || (function_exists('userHasRole') && userHasRole(['manager']));
+}
+
 function requireUserManagementAdmin(): void
 {
-    if (!userManagementCurrentUserIsAdmin()) {
-        userManagementFlash('error', 'Only administrators can manage users.');
+    if (!userManagementCanManageUsers()) {
+        userManagementFlash('error', 'Only administrators and managers can manage users.');
         redirectTo('dashboard');
     }
 }
@@ -691,6 +716,8 @@ function userManagementValidateInput(PDO $pdo, array $input, bool $isCreate, ?in
     $email = trim((string) ($input['email'] ?? ''));
     $password = (string) ($input['password'] ?? '');
     $confirmPassword = (string) ($input['confirm_password'] ?? '');
+    $role = trim((string) ($input['role'] ?? ''));
+    $roleId = (int) ($input['role_id'] ?? 0);
     $contact = trim((string) ($input['contact_number'] ?? $input['contact'] ?? $input['phone'] ?? ''));
     $address = trim((string) ($input['address'] ?? ''));
 
@@ -701,6 +728,8 @@ function userManagementValidateInput(PDO $pdo, array $input, bool $isCreate, ?in
     if ($includeAdminFields) {
         if ($username === '') {
             $errors[] = 'Username is required.';
+        } elseif (strlen($username) < 4) {
+            $errors[] = 'Username must be at least 4 characters.';
         }
 
         if ($email === '') {
@@ -716,6 +745,14 @@ function userManagementValidateInput(PDO $pdo, array $input, bool $isCreate, ?in
         if ($username !== '' && userManagementUsernameExists($pdo, $username, $userId)) {
             $errors[] = 'Username is already in use.';
         }
+
+        if (userManagementTableExists($pdo, 'roles') && userManagementColumnExists($pdo, 'users', 'role_id')) {
+            if ($roleId <= 0) {
+                $errors[] = 'Role is required.';
+            }
+        } elseif ($role === '') {
+            $errors[] = 'Role is required.';
+        }
     }
 
     if ($isCreate && $password === '') {
@@ -724,6 +761,18 @@ function userManagementValidateInput(PDO $pdo, array $input, bool $isCreate, ?in
 
     if ($password !== '' && strlen($password) < 8) {
         $errors[] = 'Password must be at least 8 characters.';
+    }
+
+    if ($password !== '' && !preg_match('/[A-Z]/', $password)) {
+        $errors[] = 'Password must include at least one uppercase letter.';
+    }
+
+    if ($password !== '' && !preg_match('/[a-z]/', $password)) {
+        $errors[] = 'Password must include at least one lowercase letter.';
+    }
+
+    if ($password !== '' && !preg_match('/[0-9]/', $password)) {
+        $errors[] = 'Password must include at least one number.';
     }
 
     if ($password !== '' && $password !== $confirmPassword) {
@@ -885,6 +934,8 @@ function handleProfileManagementRequest(): void
             throw new RuntimeException('You must be logged in to update your profile.');
         }
 
+        requireValidCsrfToken();
+
         $userId = (int) $currentUser['id'];
         $existingUser = userManagementFindUser($pdo, $userId);
 
@@ -903,6 +954,7 @@ function handleProfileManagementRequest(): void
             $_POST['profile_photo_path'] = $uploadedPhoto;
         }
 
+        $password = (string) ($_POST['password'] ?? '');
         $errors = userManagementValidateInput($pdo, $_POST, false, $userId, false);
 
         if (!empty($errors)) {
@@ -920,7 +972,11 @@ function handleProfileManagementRequest(): void
             $_SESSION['user']['role'] = userManagementDisplayRole($updatedUser);
         }
 
-        profileManagementFlash('success', 'Profile updated successfully.');
+        if (function_exists('recordAuditLog')) {
+            recordAuditLog($password !== '' ? 'Password Changed' : 'User Updated');
+        }
+
+        profileManagementFlash('success', $password !== '' ? 'Password changed successfully.' : 'Profile updated successfully.');
         profileManagementRedirect();
     } catch (Throwable $exception) {
         error_log('Profile management request failed: ' . $exception->getMessage());
@@ -944,6 +1000,8 @@ function handleUserManagementRequest(): void
             throw new RuntimeException('The users table does not exist.');
         }
 
+        requireValidCsrfToken();
+
         userManagementEnsureUserSchema($pdo);
         $action = (string) ($_POST['user_action'] ?? '');
 
@@ -957,6 +1015,9 @@ function handleUserManagementRequest(): void
 
             $data = userManagementBuildWritableData($pdo, $_POST, true);
             userManagementInsertUser($pdo, $data);
+            if (function_exists('recordAuditLog')) {
+                recordAuditLog('User Created');
+            }
             userManagementFlash('success', 'User created successfully.');
             userManagementRedirect();
         }
@@ -978,6 +1039,7 @@ function handleUserManagementRequest(): void
                 $_POST['status'] = strtolower(userManagementDisplayStatus($existingUser));
             }
 
+            $password = (string) ($_POST['password'] ?? '');
             $errors = userManagementValidateInput($pdo, $_POST, false, $userId);
 
             if (!empty($errors)) {
@@ -987,7 +1049,10 @@ function handleUserManagementRequest(): void
 
             $data = userManagementBuildWritableData($pdo, $_POST, false);
             userManagementUpdateUser($pdo, $userId, $data);
-            userManagementFlash('success', 'User updated successfully.');
+            if (function_exists('recordAuditLog')) {
+                recordAuditLog($password !== '' ? 'Password Changed' : 'User Updated');
+            }
+            userManagementFlash('success', $password !== '' ? 'Password changed successfully.' : 'User updated successfully.');
             userManagementRedirect();
         }
 
@@ -999,6 +1064,9 @@ function handleUserManagementRequest(): void
             }
 
             userManagementDeleteUser($pdo, $userId);
+            if (function_exists('recordAuditLog')) {
+                recordAuditLog('User Deleted');
+            }
             userManagementFlash('success', 'User deleted successfully.');
             userManagementRedirect();
         }
@@ -1330,7 +1398,7 @@ function roleManagementNameColumn(PDO $pdo): ?string
     return null;
 }
 
-function roleManagementFetchRoles(PDO $pdo): array
+function roleManagementFetchRoles(PDO $pdo, string $search = ''): array
 {
     roleManagementEnsureRolesTable($pdo);
 
@@ -1364,9 +1432,18 @@ function roleManagementFetchRoles(PDO $pdo): array
             $select[] = "'' AS icon";
         }
 
-        $statement = $pdo->query(
-            'SELECT ' . implode(', ', $select) . ' FROM roles ORDER BY ' . userManagementQuoteColumn($nameColumn) . ' ASC'
+        $where = '';
+        $params = [];
+
+        if ($search !== '') {
+            $where = ' WHERE ' . userManagementQuoteColumn($nameColumn) . ' LIKE :search';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $statement = $pdo->prepare(
+            'SELECT ' . implode(', ', $select) . ' FROM roles' . $where . ' ORDER BY ' . userManagementQuoteColumn($nameColumn) . ' ASC'
         );
+        $statement->execute($params);
 
         $roles = $statement->fetchAll();
 
@@ -1644,6 +1721,8 @@ function handleRoleManagementRequest(): void
 
     try {
         $pdo = getDatabaseConnection();
+        requireValidCsrfToken();
+
         roleManagementEnsureRolesTable($pdo);
         $action = (string) ($_POST['role_action'] ?? '');
 
@@ -1658,6 +1737,9 @@ function handleRoleManagementRequest(): void
             $data = roleManagementBuildWritableData($pdo, $_POST, true);
             $roleId = roleManagementInsertRole($pdo, $data);
             roleManagementSyncRolePermissions($pdo, $roleId, roleManagementPermissionIdsFromInput($pdo, $_POST));
+            if (function_exists('recordAuditLog')) {
+                recordAuditLog('Role Created');
+            }
             roleManagementFlash('success', 'Role created successfully.');
             roleManagementRedirect();
         }
@@ -1679,6 +1761,9 @@ function handleRoleManagementRequest(): void
             $data = roleManagementBuildWritableData($pdo, $_POST, false);
             roleManagementUpdateRole($pdo, $roleId, $data);
             roleManagementSyncRolePermissions($pdo, $roleId, roleManagementPermissionIdsFromInput($pdo, $_POST));
+            if (function_exists('recordAuditLog')) {
+                recordAuditLog('Role Updated');
+            }
             roleManagementFlash('success', 'Role updated successfully.');
             roleManagementRedirect();
         }
@@ -1691,6 +1776,9 @@ function handleRoleManagementRequest(): void
             }
 
             roleManagementDeleteRole($pdo, $roleId);
+            if (function_exists('recordAuditLog')) {
+                recordAuditLog('Role Deleted');
+            }
             roleManagementFlash('success', 'Role deleted successfully.');
             roleManagementRedirect();
         }
