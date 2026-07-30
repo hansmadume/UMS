@@ -4,6 +4,7 @@ require_once 'config/database.php';
 require_once 'includes/auth.php';
 require_once 'includes/users.php';
 
+applySecurityHeaders();
 startSecureSession();
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'login';
