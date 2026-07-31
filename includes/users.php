@@ -881,45 +881,30 @@ function profileManagementHandleUpload(int $userId): string
     }
 
     $tmpName = (string) ($file['tmp_name'] ?? '');
-
-    if ($tmpName === '' || !is_uploaded_file($tmpName)) {
-        throw new RuntimeException('Invalid profile photo upload.');
-    }
-
-    $imageInfo = @getimagesize($tmpName);
-
-    if ($imageInfo === false || empty($imageInfo['mime'])) {
-        throw new RuntimeException('Profile photo must be a valid image file.');
-    }
-
-    $mimeType = (string) $imageInfo['mime'];
+    $mimeType = is_file($tmpName) ? mime_content_type($tmpName) : '';
     $allowedTypes = [
-        IMAGETYPE_JPEG => ['mime' => 'image/jpeg', 'extension' => 'jpg'],
-        IMAGETYPE_PNG => ['mime' => 'image/png', 'extension' => 'png'],
-        IMAGETYPE_GIF => ['mime' => 'image/gif', 'extension' => 'gif'],
-        IMAGETYPE_WEBP => ['mime' => 'image/webp', 'extension' => 'webp'],
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/gif' => 'gif',
+        'image/webp' => 'webp',
     ];
-    $imageType = (int) ($imageInfo[2] ?? 0);
 
-    if (!isset($allowedTypes[$imageType]) || $allowedTypes[$imageType]['mime'] !== $mimeType) {
+    if (!isset($allowedTypes[$mimeType])) {
         throw new RuntimeException('Profile photo must be a JPG, PNG, GIF, or WEBP image.');
     }
 
     $uploadDirectory = __DIR__ . '/../assets/media/profile_photos';
 
-    if (!is_dir($uploadDirectory) && !mkdir($uploadDirectory, 0755, true) && !is_dir($uploadDirectory)) {
+    if (!is_dir($uploadDirectory) && !mkdir($uploadDirectory, 0775, true) && !is_dir($uploadDirectory)) {
         throw new RuntimeException('Unable to create profile photo upload directory.');
     }
 
-    $safeToken = bin2hex(random_bytes(16));
-    $relativePath = 'assets/media/profile_photos/user_' . $userId . '_' . $safeToken . '.' . $allowedTypes[$imageType]['extension'];
+    $relativePath = 'assets/media/profile_photos/user_' . $userId . '_' . time() . '.' . $allowedTypes[$mimeType];
     $absolutePath = __DIR__ . '/../' . $relativePath;
 
     if (!move_uploaded_file($tmpName, $absolutePath)) {
         throw new RuntimeException('Unable to save profile photo.');
     }
-
-    @chmod($absolutePath, 0644);
 
     return $relativePath;
 }
