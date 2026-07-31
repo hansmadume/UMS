@@ -12,46 +12,10 @@ function authInactivityTimeoutSeconds(): int
     return defined('AUTH_INACTIVITY_TIMEOUT_SECONDS') ? (int) constant('AUTH_INACTIVITY_TIMEOUT_SECONDS') : 1800;
 }
 
-function authCookieSecure(): bool
-{
-    return defined('AUTH_COOKIE_SECURE') ? (bool) constant('AUTH_COOKIE_SECURE') : (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-}
-
-function applySecurityHeaders(): void
-{
-    if (headers_sent()) {
-        return;
-    }
-
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: SAMEORIGIN');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
-    header(
-        "Content-Security-Policy: default-src 'self'; " .
-        "base-uri 'self'; " .
-        "form-action 'self'; " .
-        "frame-ancestors 'self'; " .
-        "img-src 'self' data:; " .
-        "font-src 'self' https://fonts.gstatic.com; " .
-        "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; " .
-        "script-src 'self' 'unsafe-inline'"
-    );
-}
-
 function startSecureSession(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
-    }
-
-    ini_set('session.use_strict_mode', '1');
-    ini_set('session.use_only_cookies', '1');
-    ini_set('session.cookie_httponly', '1');
-    ini_set('session.cookie_samesite', 'Lax');
-
-    if (authCookieSecure()) {
-        ini_set('session.cookie_secure', '1');
     }
 
     $remembered = !empty($_COOKIE['ums_remember_login']);
@@ -60,7 +24,6 @@ function startSecureSession(): void
     session_set_cookie_params([
         'lifetime' => $lifetime,
         'path' => '/',
-        'secure' => authCookieSecure(),
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -105,127 +68,6 @@ function requireValidCsrfToken(): void
 {
     if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
         throw new RuntimeException('Your request could not be verified. Please refresh the page and try again.');
-    }
-}
-
-function authLoginMaxAttempts(): int
-{
-    return defined('AUTH_LOGIN_MAX_ATTEMPTS') ? max(1, (int) constant('AUTH_LOGIN_MAX_ATTEMPTS')) : 5;
-}
-
-function authLoginWindowSeconds(): int
-{
-    return defined('AUTH_LOGIN_WINDOW_SECONDS') ? max(60, (int) constant('AUTH_LOGIN_WINDOW_SECONDS')) : 900;
-}
-
-function authLoginLockSeconds(): int
-{
-    return defined('AUTH_LOGIN_LOCK_SECONDS') ? max(60, (int) constant('AUTH_LOGIN_LOCK_SECONDS')) : 900;
-}
-
-function authClientIp(): string
-{
-    return substr((string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'), 0, 45);
-}
-
-function authLoginIdentifierHash(string $identifier): string
-{
-    return hash('sha256', strtolower(trim($identifier)));
-}
-
-function authEnsureLoginAttemptsTable(PDO $pdo): void
-{
-    $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS login_attempts (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            identifier_hash CHAR(64) NOT NULL,
-            ip_address VARCHAR(45) NOT NULL,
-            attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_login_attempts_lookup (identifier_hash, ip_address, attempted_at),
-            INDEX idx_login_attempts_attempted_at (attempted_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-    );
-}
-
-function authPruneOldLoginAttempts(PDO $pdo): void
-{
-    $cutoff = date('Y-m-d H:i:s', time() - max(authLoginWindowSeconds(), authLoginLockSeconds()));
-    $statement = $pdo->prepare('DELETE FROM login_attempts WHERE attempted_at < :cutoff');
-    $statement->execute(['cutoff' => $cutoff]);
-}
-
-function authEnforceLoginThrottle(string $identifier): void
-{
-    try {
-        $pdo = getDatabaseConnection();
-        authEnsureLoginAttemptsTable($pdo);
-        authPruneOldLoginAttempts($pdo);
-
-        $cutoff = date('Y-m-d H:i:s', time() - authLoginWindowSeconds());
-        $statement = $pdo->prepare(
-            'SELECT COUNT(*) AS attempts, MAX(attempted_at) AS last_attempt
-             FROM login_attempts
-             WHERE identifier_hash = :identifier_hash
-               AND ip_address = :ip_address
-               AND attempted_at >= :cutoff'
-        );
-        $statement->execute([
-            'identifier_hash' => authLoginIdentifierHash($identifier),
-            'ip_address' => authClientIp(),
-            'cutoff' => $cutoff,
-        ]);
-
-        $row = $statement->fetch();
-        $attempts = (int) ($row['attempts'] ?? 0);
-        $lastAttempt = !empty($row['last_attempt']) ? strtotime((string) $row['last_attempt']) : 0;
-
-        if ($attempts >= authLoginMaxAttempts() && $lastAttempt > 0 && (time() - $lastAttempt) < authLoginLockSeconds()) {
-            throw new RuntimeException('Too many failed login attempts. Please wait before trying again.');
-        }
-    } catch (RuntimeException $exception) {
-        throw $exception;
-    } catch (Throwable $exception) {
-        error_log('Login throttle check failed: ' . $exception->getMessage());
-    }
-}
-
-function authRecordFailedLogin(string $identifier): void
-{
-    try {
-        $pdo = getDatabaseConnection();
-        authEnsureLoginAttemptsTable($pdo);
-
-        $statement = $pdo->prepare(
-            'INSERT INTO login_attempts (identifier_hash, ip_address, attempted_at)
-             VALUES (:identifier_hash, :ip_address, :attempted_at)'
-        );
-        $statement->execute([
-            'identifier_hash' => authLoginIdentifierHash($identifier),
-            'ip_address' => authClientIp(),
-            'attempted_at' => date('Y-m-d H:i:s'),
-        ]);
-    } catch (Throwable $exception) {
-        error_log('Failed login attempt recording failed: ' . $exception->getMessage());
-    }
-}
-
-function authClearFailedLogins(string $identifier): void
-{
-    try {
-        $pdo = getDatabaseConnection();
-        authEnsureLoginAttemptsTable($pdo);
-
-        $statement = $pdo->prepare(
-            'DELETE FROM login_attempts
-             WHERE identifier_hash = :identifier_hash
-               AND ip_address = :ip_address'
-        );
-        $statement->execute([
-            'identifier_hash' => authLoginIdentifierHash($identifier),
-            'ip_address' => authClientIp(),
-        ]);
-    } catch (Throwable $exception) {
-        error_log('Failed login attempt cleanup failed: ' . $exception->getMessage());
     }
 }
 
@@ -318,14 +160,15 @@ function persistCurrentSessionCookie(int $lifetime): void
 
     $params = session_get_cookie_params();
 
-    setcookie(session_name(), session_id(), [
-        'expires' => $lifetime > 0 ? time() + $lifetime : 0,
-        'path' => $params['path'] ?? '/',
-        'domain' => $params['domain'] ?? '',
-        'secure' => authCookieSecure(),
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
+    setcookie(
+        session_name(),
+        session_id(),
+        $lifetime > 0 ? time() + $lifetime : 0,
+        $params['path'] ?? '/',
+        $params['domain'] ?? '',
+        $params['secure'] ?? false,
+        $params['httponly'] ?? true
+    );
 }
 
 function logoutUser(string $reason = ''): void
@@ -338,23 +181,18 @@ function logoutUser(string $reason = ''): void
 
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', [
-            'expires' => time() - 42000,
-            'path' => $params['path'] ?? '/',
-            'domain' => $params['domain'] ?? '',
-            'secure' => authCookieSecure(),
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params['path'] ?? '/',
+            $params['domain'] ?? '',
+            $params['secure'] ?? false,
+            $params['httponly'] ?? true
+        );
     }
 
-    setcookie('ums_remember_login', '', [
-        'expires' => time() - 3600,
-        'path' => '/',
-        'secure' => authCookieSecure(),
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
+    setcookie('ums_remember_login', '', time() - 3600, '/');
 
     if (session_status() === PHP_SESSION_ACTIVE) {
         session_destroy();
@@ -490,13 +328,11 @@ function passwordMatches(string $password, string $storedPassword): bool
         return false;
     }
 
-    if (password_get_info($storedPassword)['algo'] === 0) {
-        error_log('Rejected login attempt for account with non-hashed password storage.');
-
-        return false;
+    if (password_get_info($storedPassword)['algo'] !== 0) {
+        return password_verify($password, $storedPassword);
     }
 
-    return password_verify($password, $storedPassword);
+    return hash_equals($storedPassword, $password);
 }
 
 function buildSessionUser(array $user): array
@@ -581,17 +417,13 @@ function requirePageAccess(string $page): void
 
 function attemptLogin(string $identifier, string $password, bool $rememberMe = false): bool
 {
-    authEnforceLoginThrottle($identifier);
-
     $user = findUserByIdentifier($identifier);
 
     if (!$user || !userIsActive($user) || !passwordMatches($password, getUserPasswordHash($user))) {
-        authRecordFailedLogin($identifier);
         recordAuditLog('Login Failed', ['id' => null, 'name' => $identifier]);
         return false;
     }
 
-    authClearFailedLogins($identifier);
     session_regenerate_id(true);
 
     $_SESSION['user'] = buildSessionUser($user);
@@ -615,22 +447,10 @@ function attemptLogin(string $identifier, string $password, bool $rememberMe = f
     if ($rememberMe) {
         $rememberLifetime = authRememberMeSeconds();
         persistCurrentSessionCookie($rememberLifetime);
-        setcookie('ums_remember_login', '1', [
-            'expires' => time() + $rememberLifetime,
-            'path' => '/',
-            'secure' => authCookieSecure(),
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
+        setcookie('ums_remember_login', '1', time() + $rememberLifetime, '/', '', false, true);
     } else {
         persistCurrentSessionCookie(0);
-        setcookie('ums_remember_login', '', [
-            'expires' => time() - 3600,
-            'path' => '/',
-            'secure' => authCookieSecure(),
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
+        setcookie('ums_remember_login', '', time() - 3600, '/');
     }
 
     return true;
