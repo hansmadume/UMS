@@ -1,12 +1,8 @@
-/* =============================================
-   Profile Page Styles
-   ============================================= */
-
 .profile-page {
   max-width: 800px;
 }
 
-/* Profile Header Card */
+/* ======= Profile Header Card ======= */
 .profile-header-card {
   display: flex;
   align-items: center;
@@ -14,6 +10,14 @@
   padding: 32px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+  transition:
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.profile-header-card:hover {
+  border-color: var(--green-primary);
+  box-shadow: var(--shadow-lg);
 }
 
 .profile-info {
@@ -55,9 +59,18 @@
   color: var(--green-light);
 }
 
-/* Profile Form Card */
+/* ======= Profile Form Cards ======= */
 .profile-form-card {
   padding: 32px;
+  margin-bottom: 24px;
+  transition:
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.profile-form-card:hover {
+  border-color: var(--green-primary);
+  box-shadow: var(--shadow-lg);
 }
 
 .form-title {
@@ -79,6 +92,37 @@
   gap: 16px;
 }
 
+/* ======= Readonly Input Styling ======= */
+.profile-form .mui-input[readonly],
+.profile-form .mui-input:read-only {
+  border-bottom-style: dashed;
+  border-bottom-color: var(--black-border);
+  color: var(--text-muted);
+  cursor: default;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.profile-form .mui-input[readonly]:hover,
+.profile-form .mui-input:read-only:hover {
+  border-bottom-color: var(--black-border);
+}
+
+.profile-form .mui-input[readonly]:focus,
+.profile-form .mui-input:read-only:focus {
+  border-bottom-color: var(--black-border);
+}
+
+.profile-form .mui-input[readonly] + .mui-label,
+.profile-form .mui-input:read-only + .mui-label {
+  color: var(--text-muted);
+}
+
+.profile-form .mui-input[readonly]:focus + .mui-label,
+.profile-form .mui-input:read-only:focus + .mui-label {
+  color: var(--text-muted);
+}
+
+/* ======= Form Actions ======= */
 .form-actions {
   display: flex;
   gap: 12px;
@@ -87,7 +131,34 @@
   border-top: 1px solid var(--black-border);
 }
 
-/* Responsive */
+/* ======= Profile Avatar Enhancement ======= */
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background-color: var(--green-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--green-primary);
+  overflow: hidden;
+  flex-shrink: 0;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.profile-header-card:hover .profile-avatar {
+  border-color: var(--green-light);
+  box-shadow: 0 0 20px rgba(0, 200, 83, 0.25);
+}
+
+.profile-avatar .material-icons {
+  font-size: 48px;
+  color: var(--green-light);
+}
+
+/* ======= Responsive ======= */
 @media (max-width: 768px) {
   .profile-header-card {
     flex-direction: column;

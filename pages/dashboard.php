@@ -197,24 +197,37 @@ $quickLinks = [
         'url' => 'index.php?page=dashboard',
     ],
     [
-        'label' => 'User Management',
-        'description' => 'Manage user records and account access',
-        'icon' => 'group',
-        'url' => 'index.php?page=user_management',
-    ],
-    [
-        'label' => 'User Roles',
-        'description' => 'Review roles and permissions',
-        'icon' => 'security',
-        'url' => 'index.php?page=user_roles',
-    ],
-    [
         'label' => 'Profile',
         'description' => 'Update your personal account details',
         'icon' => 'person',
         'url' => 'index.php?page=profile',
     ],
 ];
+
+if (function_exists('userHasRole') && userHasRole(['administrator', 'manager'], $currentUser)) {
+    $quickLinks[] = [
+        'label' => 'User Management',
+        'description' => 'Manage user records and account access',
+        'icon' => 'group',
+        'url' => 'index.php?page=user_management',
+    ];
+}
+
+if (function_exists('userHasRole') && userHasRole(['administrator'], $currentUser)) {
+    $quickLinks[] = [
+        'label' => 'User Roles',
+        'description' => 'Review roles and permissions',
+        'icon' => 'security',
+        'url' => 'index.php?page=user_roles',
+    ];
+
+    $quickLinks[] = [
+        'label' => 'Audit Logs',
+        'description' => 'Review user activity history',
+        'icon' => 'history',
+        'url' => 'index.php?page=audit_logs',
+    ];
+}
 ?>
 
 <div class="dashboard">
@@ -298,44 +311,46 @@ $quickLinks = [
             </div>
         </div>
 
-        <div class="mui-card dashboard-card">
-            <div class="card-header">
-                <h3>Recent User Activities</h3>
-            </div>
-            <div class="activity-list">
-                <?php if (!empty($recentUsers)): ?>
-                    <?php foreach ($recentUsers as $recentUser): ?>
+        <?php if ($isAdmin): ?>
+            <div class="mui-card dashboard-card">
+                <div class="card-header">
+                    <h3>Recent User Activities</h3>
+                </div>
+                <div class="activity-list">
+                    <?php if (!empty($recentUsers)): ?>
+                        <?php foreach ($recentUsers as $recentUser): ?>
                         <?php
                         $recentName = dashboardUserDisplayName($recentUser);
                         $recentStatus = dashboardUserStatus($recentUser);
                         $recentStatusClass = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $recentStatus));
                         ?>
-                        <div class="activity-item">
-                            <span class="material-icons activity-icon">person</span>
-                            <div class="activity-info">
-                                <p class="activity-text">
-                                    <strong><?php echo dashboardEscape($recentName); ?></strong>
-                                    is listed as <?php echo dashboardEscape(dashboardUserRole($recentUser)); ?>.
-                                </p>
-                                <span class="activity-time">
-                                    Status:
-                                    <span class="status-badge <?php echo dashboardEscape($recentStatusClass); ?>">
-                                        <?php echo dashboardEscape($recentStatus); ?>
+                            <div class="activity-item">
+                                <span class="material-icons activity-icon">person</span>
+                                <div class="activity-info">
+                                    <p class="activity-text">
+                                        <strong><?php echo dashboardEscape($recentName); ?></strong>
+                                        is listed as <?php echo dashboardEscape(dashboardUserRole($recentUser)); ?>.
+                                    </p>
+                                    <span class="activity-time">
+                                        Status:
+                                        <span class="status-badge <?php echo dashboardEscape($recentStatusClass); ?>">
+                                            <?php echo dashboardEscape($recentStatus); ?>
+                                        </span>
                                     </span>
-                                </span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="activity-item">
+                            <span class="material-icons activity-icon">info</span>
+                            <div class="activity-info">
+                                <p class="activity-text">No recent user activity is available.</p>
+                                <span class="activity-time">Activity tracking is optional.</span>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="activity-item">
-                        <span class="material-icons activity-icon">info</span>
-                        <div class="activity-info">
-                            <p class="activity-text">No recent user activity is available.</p>
-                            <span class="activity-time">Activity tracking is optional.</span>
-                        </div>
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
     </div>
 </div>

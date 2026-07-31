@@ -28,6 +28,19 @@ define('AUTH_INACTIVITY_TIMEOUT_SECONDS', 1800);
  */
 define('AUTH_REMEMBER_ME_SECONDS', 60 * 60 * 24 * 30);
 
+/**
+ * Session cookies should be Secure in HTTPS environments.
+ * Keep this false for local HTTP development; set true in production HTTPS.
+ */
+define('AUTH_COOKIE_SECURE', !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+
+/**
+ * Failed-login throttling controls.
+ */
+define('AUTH_LOGIN_MAX_ATTEMPTS', 5);
+define('AUTH_LOGIN_WINDOW_SECONDS', 900);
+define('AUTH_LOGIN_LOCK_SECONDS', 900);
+
 function getDatabaseConnection(): PDO
 {
     static $pdo = null;

@@ -1,12 +1,129 @@
-/* =============================================
-   User Management Page Styles
-   ============================================= */
-
 .user-management {
   max-width: 1100px;
 }
 
-/* User cell in table */
+/* ======= User Management Form Card ======= */
+.user-management .mui-card {
+  margin-bottom: 28px;
+  padding: 28px 32px;
+  transition:
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.user-management .mui-card:hover {
+  border-color: var(--green-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+.user-management .mui-card h3 {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--black-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-management .mui-card h3::before {
+  content: "group";
+  font-family: "Material Icons";
+  font-size: 22px;
+  color: var(--green-light);
+}
+
+.user-management .user-form {
+  width: 100%;
+}
+
+/* 2-column grid for user form fields */
+.user-management .user-form .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  margin-bottom: 8px;
+}
+
+.user-management .user-form .form-grid .mui-input-group {
+  margin-bottom: 0;
+}
+
+.user-management .user-form .form-grid .mui-input-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ======= Form Actions ======= */
+.user-management .form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--black-border);
+}
+
+.user-management .form-actions .mui-btn {
+  flex: 0 1 auto;
+}
+
+/* ======= Filter Bar ======= */
+.user-management .section-header .header-actions form.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background-color: var(--black-tertiary);
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--black-border);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.user-management .section-header .header-actions form.search-box:hover {
+  border-color: var(--green-primary);
+  background-color: var(--black-secondary);
+}
+
+.user-management .section-header .header-actions form.search-box .mui-input {
+  min-width: 140px;
+  padding: 8px 8px 8px 36px;
+  background-color: transparent;
+  border-bottom: none;
+  font-size: 0.85rem;
+}
+
+.user-management
+  .section-header
+  .header-actions
+  form.search-box
+  select.mui-input {
+  padding: 8px 28px 8px 10px;
+  min-width: 110px;
+  background-color: transparent;
+  border-bottom: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.user-management .section-header .header-actions form.search-box .mui-btn {
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.user-management
+  .section-header
+  .header-actions
+  form.search-box
+  .material-icons {
+  left: 10px;
+}
+
+/* ======= User Cells ======= */
 .user-cell {
   display: flex;
   align-items: center;
@@ -16,13 +133,14 @@
 .user-avatar {
   font-size: 28px !important;
   color: var(--text-muted);
+  transition: color var(--transition-fast);
 }
 
 tr:hover .user-avatar {
   color: var(--green-light);
 }
 
-/* Table actions hover effect */
+/* ======= Table Actions ======= */
 .table-actions .mui-btn {
   padding: 4px 8px;
   min-width: 32px;
@@ -54,8 +172,55 @@ tr:hover .user-avatar {
   background-color: rgba(207, 102, 121, 0.1);
 }
 
-/* Responsive */
+/* ======= Empty State ======= */
+.user-management .mui-table tbody tr td[colspan] {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.user-management .mui-table tbody tr td[colspan]::before {
+  content: "group_off";
+  font-family: "Material Icons";
+  display: block;
+  font-size: 40px;
+  color: var(--black-tertiary);
+  margin-bottom: 12px;
+}
+
+/* ======= Responsive ======= */
 @media (max-width: 768px) {
+  .user-management .mui-card {
+    padding: 20px 16px;
+  }
+
+  .user-management .user-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-management .form-actions {
+    flex-direction: column;
+  }
+
+  .user-management .form-actions .mui-btn {
+    width: 100%;
+  }
+
+  .user-management .section-header .header-actions form.search-box {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .user-management .section-header .header-actions form.search-box .mui-input,
+  .user-management
+    .section-header
+    .header-actions
+    form.search-box
+    select.mui-input {
+    min-width: 100%;
+  }
+
   .mui-table th:nth-child(3),
   .mui-table td:nth-child(3) {
     display: none;
@@ -66,5 +231,9 @@ tr:hover .user-avatar {
   .mui-table th:nth-child(4),
   .mui-table td:nth-child(4) {
     display: none;
+  }
+
+  .user-management .section-header .header-actions form.search-box {
+    flex-direction: column;
   }
 }
