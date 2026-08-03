@@ -52,7 +52,6 @@
                 <span class="checkbox-custom"></span>
                 <span class="checkbox-text">Remember me</span>
             </label>
-            <a href="#" class="forgot-link">Forgot password?</a>
         </div>
         <button type="submit" class="mui-btn mui-btn-contained login-btn">
             <span class="material-icons">login</span>
