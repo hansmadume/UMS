@@ -69,6 +69,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  document.querySelectorAll(".forgot-link").forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+
+      const messageId = link.getAttribute("aria-controls");
+      const message = messageId ? document.getElementById(messageId) : null;
+
+      if (message) {
+        message.hidden = false;
+        message.focus();
+      }
+    });
+  });
+
   function showFormMessage(form, message, type) {
     let alert = form.querySelector(".form-validation-message");
 

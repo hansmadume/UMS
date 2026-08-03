@@ -52,6 +52,11 @@
                 <span class="checkbox-custom"></span>
                 <span class="checkbox-text">Remember me</span>
             </label>
+            <a href="#" class="forgot-link" aria-controls="forgot-password-message">Forgot password?</a>
+        </div>
+        <div id="forgot-password-message" class="login-alert login-alert-info forgot-password-message" role="alert" tabindex="-1" hidden>
+            <strong>Please contact your system administrator to reset your password.</strong><br>
+            For security reasons, self-service password reset is not available on this system.
         </div>
         <button type="submit" class="mui-btn mui-btn-contained login-btn">
             <span class="material-icons">login</span>

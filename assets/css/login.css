@@ -142,6 +142,17 @@
   margin-bottom: 24px;
 }
 
+.forgot-link {
+  font-size: 0.8rem;
+  color: var(--green-light);
+  transition: color var(--transition-fast);
+}
+
+.forgot-link:hover {
+  color: var(--green-lighter);
+  text-decoration: underline;
+}
+
 .login-btn {
   width: 100%;
   padding: 14px 24px;
