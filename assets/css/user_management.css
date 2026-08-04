@@ -100,10 +100,35 @@
   select.mui-input {
   padding: 8px 28px 8px 10px;
   min-width: 110px;
-  background-color: transparent;
+  background-color: var(--black-tertiary);
+  color: var(--text-primary);
   border-bottom: none;
   font-size: 0.85rem;
   cursor: pointer;
+}
+
+.user-management
+  .section-header
+  .header-actions
+  form.search-box
+  select.mui-input:hover,
+.user-management
+  .section-header
+  .header-actions
+  form.search-box
+  select.mui-input:focus {
+  background-color: var(--black-hover);
+  color: var(--text-primary);
+}
+
+.user-management
+  .section-header
+  .header-actions
+  form.search-box
+  select.mui-input
+  option {
+  background-color: var(--black-secondary);
+  color: var(--text-primary);
 }
 
 .user-management .section-header .header-actions form.search-box .mui-btn {
