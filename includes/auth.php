@@ -120,6 +120,109 @@ function recordAuditLog(string $action, ?array $user = null): void
     }
 }
 
+function getRoleNotificationMessage(string $role): string
+{
+    $roleKey = strtolower(trim($role));
+
+    if (in_array($roleKey, ['administrator', 'admin', 'super admin'], true)) {
+        return 'Administrator access is active. You can monitor users, roles, and audit activity.';
+    }
+
+    if ($roleKey === 'manager') {
+        return 'Manager access is active. You can review and manage assigned users.';
+    }
+
+    if ($roleKey === 'staff') {
+        return 'Staff access is active. Your workspace is ready.';
+    }
+
+    return 'Your account workspace is ready.';
+}
+
+function getRecentLoggedInUsersForNotifications(int $limit = 5): array
+{
+    try {
+        $pdo = getDatabaseConnection();
+        authEnsureAuditLogTable($pdo);
+
+        $statement = $pdo->prepare(
+            'SELECT user_id, user_name, ip_address, MAX(created_at) AS last_login
+             FROM audit_logs
+             WHERE action = :action AND user_id IS NOT NULL
+             GROUP BY user_id, user_name, ip_address
+             ORDER BY last_login DESC
+             LIMIT ' . max(1, min(10, $limit))
+        );
+        $statement->execute(['action' => 'Login Successful']);
+
+        return $statement->fetchAll() ?: [];
+    } catch (Throwable $exception) {
+        error_log('Notification login lookup failed: ' . $exception->getMessage());
+
+        return [];
+    }
+}
+
+function getUserNotifications(?array $user = null): array
+{
+    $user = $user ?? getAuthenticatedUser();
+
+    if (!$user) {
+        return [];
+    }
+
+    $userName = (string) ($user['name'] ?? $user['username'] ?? $user['email'] ?? 'User');
+    $role = (string) ($user['role'] ?? 'Guest');
+    $notifications = [];
+
+    if (!empty($_SESSION['show_login_welcome'])) {
+        $notifications[] = [
+            'type' => 'success',
+            'icon' => 'waving_hand',
+            'title' => 'Welcome back, ' . $userName,
+            'message' => getRoleNotificationMessage($role),
+            'time' => 'Just now',
+        ];
+    }
+
+    $notifications[] = [
+        'type' => 'info',
+        'icon' => 'verified_user',
+        'title' => 'Signed in as ' . $role,
+        'message' => getRoleNotificationMessage($role),
+        'time' => 'Active now',
+    ];
+
+    if (userHasRole(['administrator'], $user)) {
+        $recentUsers = getRecentLoggedInUsersForNotifications(5);
+
+        foreach ($recentUsers as $recentUser) {
+            $recentName = (string) ($recentUser['user_name'] ?? 'Unknown user');
+            $lastLogin = !empty($recentUser['last_login']) ? strtotime((string) $recentUser['last_login']) : false;
+
+            $notifications[] = [
+                'type' => 'admin',
+                'icon' => 'manage_accounts',
+                'title' => $recentName . ' logged in',
+                'message' => 'Admin notice: user session activity detected' . (!empty($recentUser['ip_address']) ? ' from ' . $recentUser['ip_address'] : '') . '.',
+                'time' => $lastLogin ? date('M j, g:i A', $lastLogin) : 'Recently',
+            ];
+        }
+
+        if (count($recentUsers) === 0) {
+            $notifications[] = [
+                'type' => 'admin',
+                'icon' => 'admin_panel_settings',
+                'title' => 'No recent login activity',
+                'message' => 'Admin notifications will show users as they log in.',
+                'time' => 'Updated now',
+            ];
+        }
+    }
+
+    return array_slice($notifications, 0, 8);
+}
+
 function isAuthenticated(): bool
 {
     return !empty($_SESSION['user']) && !empty($_SESSION['user']['id']);
@@ -427,6 +530,7 @@ function attemptLogin(string $identifier, string $password, bool $rememberMe = f
     session_regenerate_id(true);
 
     $_SESSION['user'] = buildSessionUser($user);
+    $_SESSION['show_login_welcome'] = true;
     refreshSessionActivity();
     recordAuditLog('Login Successful', $_SESSION['user']);
 

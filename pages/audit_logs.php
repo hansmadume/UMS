@@ -7,6 +7,22 @@ function auditLogPageEscape(string $value): string
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
+function auditLogPageIsoDateTime(string $value): string
+{
+    if ($value === '') {
+        return '';
+    }
+
+    try {
+        $timezone = new DateTimeZone(date_default_timezone_get());
+        $dateTime = new DateTimeImmutable($value, $timezone);
+
+        return $dateTime->format(DateTimeInterface::ATOM);
+    } catch (Throwable $exception) {
+        return '';
+    }
+}
+
 try {
     $pdo = getDatabaseConnection();
 
@@ -52,7 +68,19 @@ try {
                 <?php if (!empty($auditLogs)): ?>
                     <?php foreach ($auditLogs as $log): ?>
                         <tr>
-                            <td><?php echo auditLogPageEscape(userManagementDisplayDate((string) ($log['created_at'] ?? ''))); ?></td>
+                            <?php
+                            $createdAt = (string) ($log['created_at'] ?? '');
+                            $createdAtIso = auditLogPageIsoDateTime($createdAt);
+                            ?>
+                            <td>
+                                <time
+                                    class="user-local-time"
+                                    datetime="<?php echo auditLogPageEscape($createdAtIso); ?>"
+                                    data-local-time="<?php echo auditLogPageEscape($createdAtIso); ?>"
+                                >
+                                    <?php echo auditLogPageEscape(userManagementDisplayDate($createdAt)); ?>
+                                </time>
+                            </td>
                             <td>
                                 <?php echo auditLogPageEscape((string) ($log['user_name'] ?? 'Guest')); ?>
                                 <?php if (!empty($log['user_id'])): ?>

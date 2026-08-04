@@ -19,8 +19,21 @@ $login_error = '';
 $login_notice = '';
 
 if ($page === 'logout') {
-    logoutUser();
-    redirectTo('login');
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        redirectTo(isAuthenticated() ? 'dashboard' : 'login');
+    }
+
+    try {
+        requireValidCsrfToken();
+        logoutUser();
+        redirectTo('login');
+    } catch (Throwable $exception) {
+        error_log('Logout validation failed: ' . $exception->getMessage());
+        $_SESSION['login_notice'] = $exception instanceof RuntimeException
+            ? $exception->getMessage()
+            : 'Unable to validate your logout request. Please try again.';
+        redirectTo(isAuthenticated() ? 'dashboard' : 'login');
+    }
 }
 
 if (!empty($_SESSION['login_notice'])) {
