@@ -54,15 +54,17 @@ $isEditingSelf = !empty($currentUser['id']) && !empty($formUser['id']) && (int) 
         <div class="header-actions">
             <form action="index.php" method="GET" class="search-box ajax-search-form" data-target="#usersTableBody">
                 <input type="hidden" name="page" value="user_management">
-                <span class="material-icons">search</span>
-                <input
-                    type="text"
-                    class="mui-input"
-                    id="searchUsers"
-                    name="search"
-                    placeholder="Search by name, username, or email..."
-                    value="<?php echo userManagementPageEscape($userManagementSearch); ?>"
-                >
+                <div class="search-field">
+                    <span class="material-icons" aria-hidden="true">search</span>
+                    <input
+                        type="text"
+                        class="mui-input"
+                        id="searchUsers"
+                        name="search"
+                        placeholder="Search by name, username, or email..."
+                        value="<?php echo userManagementPageEscape($userManagementSearch); ?>"
+                    >
+                </div>
                 <select class="mui-input" name="role_filter">
                     <option value="">All Roles</option>
                     <?php foreach ($roles as $role): ?>
