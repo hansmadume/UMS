@@ -72,15 +72,17 @@ try {
         <div class="header-actions">
             <form action="index.php" method="GET" class="search-box ajax-search-form" data-target="#rolesTableBody" data-table="roles">
                 <input type="hidden" name="page" value="user_roles">
-                <span class="material-icons">search</span>
-                <input
-                    type="text"
-                    class="mui-input"
-                    id="searchRoles"
-                    name="search"
-                    placeholder="Search by role name..."
-                    value="<?php echo roleManagementPageEscape($roleManagementSearch); ?>"
-                >
+                <div class="search-field">
+                    <span class="material-icons" aria-hidden="true">search</span>
+                    <input
+                        type="text"
+                        class="mui-input"
+                        id="searchRoles"
+                        name="search"
+                        placeholder="Search by role name..."
+                        value="<?php echo roleManagementPageEscape($roleManagementSearch); ?>"
+                    >
+                </div>
                 <button type="submit" class="mui-btn mui-btn-contained">
                     <span class="material-icons">search</span>
                     Search

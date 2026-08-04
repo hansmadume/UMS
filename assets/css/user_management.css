@@ -70,10 +70,6 @@
 
 /* ======= Filter Bar ======= */
 .user-management .section-header .header-actions form.search-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
   background-color: var(--black-tertiary);
   padding: 8px 12px;
   border-radius: var(--border-radius);
@@ -90,10 +86,11 @@
 
 .user-management .section-header .header-actions form.search-box .mui-input {
   min-width: 140px;
-  padding: 8px 8px 8px 36px;
-  background-color: transparent;
-  border-bottom: none;
   font-size: 0.85rem;
+}
+
+.user-management .section-header .header-actions form.search-box .search-field {
+  min-width: 180px;
 }
 
 .user-management
@@ -212,13 +209,19 @@ tr:hover .user-avatar {
     padding: 10px;
   }
 
+  .user-management
+    .section-header
+    .header-actions
+    form.search-box
+    .search-field,
   .user-management .section-header .header-actions form.search-box .mui-input,
   .user-management
     .section-header
     .header-actions
     form.search-box
-    select.mui-input {
-    min-width: 100%;
+    select.mui-input,
+  .user-management .section-header .header-actions form.search-box .mui-btn {
+    width: 100%;
   }
 
   .mui-table th:nth-child(3),
@@ -235,5 +238,20 @@ tr:hover .user-avatar {
 
   .user-management .section-header .header-actions form.search-box {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-management
+    .section-header
+    .header-actions
+    form.search-box
+    .search-field,
+  .user-management .section-header .header-actions form.search-box .mui-btn,
+  .user-management
+    .section-header
+    .header-actions
+    form.search-box
+    select.mui-input {
+    width: 100%;
   }
 }
